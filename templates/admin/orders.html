@@ -1,0 +1,45 @@
+{% extends 'admin/base.html' %}
+{% block title %}Orders{% endblock %}
+{% block page_title %}Orders{% endblock %}
+
+{% block content %}
+<div class="filter-bar">
+    <div class="status-tabs">
+        <a href="{{ url_for('admin.orders') }}" class="tab {% if not current_status %}active{% endif %}">All</a>
+        {% for s in ['pending','confirmed','processing','shipped','delivered','cancelled'] %}
+        <a href="{{ url_for('admin.orders', status=s) }}" class="tab {% if current_status == s %}active{% endif %}">{{ s|title }}</a>
+        {% endfor %}
+    </div>
+</div>
+
+<div class="card">
+    <table class="data-table">
+        <thead><tr><th>Order</th><th>Customer</th><th>Items</th><th>Total</th><th>Payment</th><th>Status</th><th>Date</th></tr></thead>
+        <tbody>
+            {% for order in orders.items %}
+            <tr onclick="window.location='{{ url_for('admin.order_detail', order_id=order.id) }}'" style="cursor:pointer">
+                <td><strong>#{{ order.order_number }}</strong></td>
+                <td>{{ order.customer_name }}<br><small style="color:#888">{{ order.customer_phone }}</small></td>
+                <td>{{ order.items.count() }}</td>
+                <td>₹{{ "%.0f"|format(order.total) }}</td>
+                <td>
+                    <span class="badge badge-{{ 'success' if order.payment_status == 'paid' else 'warning' }}">{{ order.payment_status|title }}</span>
+                    <br><small>{{ order.payment_method|upper }}</small>
+                </td>
+                <td><span class="badge badge-{{ order.status }}">{{ order.status|title }}</span></td>
+                <td><small>{{ order.created_at.strftime('%d %b %Y, %I:%M %p') }}</small></td>
+            </tr>
+            {% else %}
+            <tr><td colspan="7" style="text-align:center;padding:40px;color:#888">No orders found.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% if orders.pages > 1 %}
+    <div class="pagination">
+        {% for p in orders.iter_pages() %}
+        {% if p %}<a href="?page={{ p }}&status={{ current_status }}" class="{% if p == orders.page %}active{% endif %}">{{ p }}</a>{% else %}<span>...</span>{% endif %}
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

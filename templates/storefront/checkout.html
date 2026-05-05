@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+{% block title %}Checkout - RamSetu Divine Stones{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">{% endblock %}
+
+{% block content %}
+<div style="padding:40px 5%;background:var(--cream2);min-height:80vh">
+    <h1 style="font-family:'Cinzel',serif;text-align:center;margin-bottom:36px;color:var(--dark)">Checkout</h1>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}{% for category, message in messages %}<div style="max-width:900px;margin:0 auto 20px;padding:12px 20px;border-radius:10px;background:{% if category == 'error' %}#fdecea{% else %}#e8f5e9{% endif %}">{{ message }}</div>{% endfor %}{% endif %}
+    {% endwith %}
+
+    <form method="POST" style="max-width:1000px;margin:0 auto;display:grid;grid-template-columns:1.2fr 1fr;gap:36px">
+        <div>
+            <div style="background:#fff;border-radius:16px;padding:28px;box-shadow:0 4px 20px rgba(0,0,0,0.06)">
+                <h3 style="font-family:'Cinzel',serif;margin-bottom:20px;color:var(--dark)">Shipping Details</h3>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+                    <div style="grid-column:span 2"><label style="font-weight:600;font-size:0.85rem;display:block;margin-bottom:4px">Full Name *</label><input type="text" name="name" required value="{{ current_user.name if current_user.is_authenticated else '' }}" style="width:100%;padding:12px 16px;border:1px solid #ddd;border-radius:10px;font-size:0.95rem"></div>
+                    <div><label style="font-weight:600;font-size:0.85rem;display:block;margin-bottom:4px">Email</label><input type="email" name="email" value="{{ current_user.email if current_user.is_authenticated else '' }}" style="width:100%;padding:12px 16px;border:1px solid #ddd;border-radius:10px;font-size:0.95rem"></div>
+                    <div><label style="font-weight:600;font-size:0.85rem;display:block;margin-bottom:4px">Phone *</label><input type="tel" name="phone" required value="{{ current_user.phone if current_user.is_authenticated else '' }}" style="width:100%;padding:12px 16px;border:1px solid #ddd;border-radius:10px;font-size:0.95rem"></div>
+                    <div style="grid-column:span 2"><label style="font-weight:600;font-size:0.85rem;display:block;margin-bottom:4px">Address *</label><textarea name="address" required rows="3" style="width:100%;padding:12px 16px;border:1px solid #ddd;border-radius:10px;font-size:0.95rem"></textarea></div>
+                    <div><label style="font-weight:600;font-size:0.85rem;display:block;margin-bottom:4px">City *</label><input type="text" name="city" required style="width:100%;padding:12px 16px;border:1px solid #ddd;border-radius:10px;font-size:0.95rem"></div>
+                    <div><label style="font-weight:600;font-size:0.85rem;display:block;margin-bottom:4px">State *</label><input type="text" name="state" required style="width:100%;padding:12px 16px;border:1px solid #ddd;border-radius:10px;font-size:0.95rem"></div>
+                    <div><label style="font-weight:600;font-size:0.85rem;display:block;margin-bottom:4px">Pincode *</label><input type="text" name="pincode" required pattern="[0-9]{6}" style="width:100%;padding:12px 16px;border:1px solid #ddd;border-radius:10px;font-size:0.95rem"></div>
+                    <div><label style="font-weight:600;font-size:0.85rem;display:block;margin-bottom:4px">Order Notes</label><input type="text" name="notes" placeholder="Any special instructions" style="width:100%;padding:12px 16px;border:1px solid #ddd;border-radius:10px;font-size:0.95rem"></div>
+                </div>
+            </div>
+
+            <div style="background:#fff;border-radius:16px;padding:28px;margin-top:20px;box-shadow:0 4px 20px rgba(0,0,0,0.06)">
+                <h3 style="font-family:'Cinzel',serif;margin-bottom:20px;color:var(--dark)">Payment Method</h3>
+                {% if cod_enabled %}
+                <label style="display:flex;align-items:center;gap:12px;padding:16px;border:2px solid #eee;border-radius:12px;cursor:pointer;margin-bottom:10px">
+                    <input type="radio" name="payment_method" value="cod" checked style="accent-color:var(--gold);width:18px;height:18px">
+                    <div><strong>Cash on Delivery (COD)</strong><br><small style="color:#888">Pay when you receive your order</small></div>
+                </label>
+                {% endif %}
+                {% if razorpay_enabled %}
+                <label style="display:flex;align-items:center;gap:12px;padding:16px;border:2px solid #eee;border-radius:12px;cursor:pointer">
+                    <input type="radio" name="payment_method" value="razorpay" {% if not cod_enabled %}checked{% endif %} style="accent-color:var(--gold);width:18px;height:18px">
+                    <div><strong>Pay Online (Razorpay)</strong><br><small style="color:#888">UPI, Cards, Net Banking & more</small></div>
+                </label>
+                {% endif %}
+            </div>
+        </div>
+
+        <div>
+            <div style="background:#fff;border-radius:16px;padding:28px;box-shadow:0 4px 20px rgba(0,0,0,0.06);position:sticky;top:90px">
+                <h3 style="font-family:'Cinzel',serif;margin-bottom:20px;color:var(--dark)">Order Summary</h3>
+                {% for item in items %}
+                <div style="display:flex;gap:12px;margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid #f5f5f5">
+                    <img src="{{ item.product.primary_image or '' }}" style="width:50px;height:50px;border-radius:8px;object-fit:cover">
+                    <div style="flex:1"><div style="font-weight:600;font-size:0.85rem">{{ item.product.name }}</div><small style="color:#888">Qty: {{ item.qty }}</small></div>
+                    <div style="font-weight:700;font-size:0.9rem">₹{{ "%.0f"|format(item.total) }}</div>
+                </div>
+                {% endfor %}
+                <div style="margin-top:16px;padding-top:16px;border-top:2px solid #f0f0f0">
+                    <div style="display:flex;justify-content:space-between;margin-bottom:8px"><span style="color:#888">Subtotal</span><span>₹{{ "%.0f"|format(subtotal) }}</span></div>
+                    {% if discount %}<div style="display:flex;justify-content:space-between;margin-bottom:8px"><span style="color:#888">Discount{% if coupon_code %} ({{ coupon_code }}){% endif %}</span><span style="color:green">-₹{{ "%.0f"|format(discount) }}</span></div>{% endif %}
+                    <div style="display:flex;justify-content:space-between;margin-bottom:8px"><span style="color:#888">Shipping</span><span>{% if shipping %}₹{{ "%.0f"|format(shipping) }}{% else %}<span style="color:#25D366">FREE</span>{% endif %}</span></div>
+                    <div style="display:flex;justify-content:space-between;margin-top:12px;padding-top:12px;border-top:2px solid #eee"><span style="font-weight:800;font-size:1.1rem">Total</span><span style="font-weight:900;font-size:1.4rem;color:var(--dark)">₹{{ "%.0f"|format(total) }}</span></div>
+                </div>
+                <button type="submit" class="btn-primary" style="width:100%;justify-content:center;margin-top:24px;padding:16px;font-size:1rem">Place Order 🙏</button>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}

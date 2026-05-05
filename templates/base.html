@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}RamSetu Divine Stones – A Sacred Symbol of Faith{% endblock %}</title>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=Tiro+Devanagari+Sanskrit:ital@0;1&family=Playfair+Display:wght@700;900&family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Base CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
+    
+    {% block extra_css %}{% endblock %}
+</head>
+
+<body>
+
+    {% include 'partials/navbar.html' %}
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div style="position:fixed;top:80px;right:20px;z-index:9999;max-width:380px">
+        {% for category, message in messages %}
+        <div class="toast-msg toast-{{ category }}" style="background:{% if category == 'error' %}#fdecea{% elif category == 'success' %}#e8f5e9{% else %}#fff3e0{% endif %};padding:14px 20px;border-radius:12px;margin-bottom:8px;box-shadow:0 4px 20px rgba(0,0,0,0.12);font-size:0.9rem;display:flex;justify-content:space-between;align-items:center;animation:slideIn 0.3s ease">
+            {{ message }}
+            <button onclick="this.parentElement.remove()" style="background:none;border:none;font-size:1.1rem;cursor:pointer;margin-left:12px">✕</button>
+        </div>
+        {% endfor %}
+    </div>
+    <style>@keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}</style>
+    <script>setTimeout(()=>{document.querySelectorAll('.toast-msg').forEach(t=>t.remove())},5000)</script>
+    {% endif %}
+    {% endwith %}
+
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    {% include 'partials/footer.html' %}
+
+    <!-- Global JS -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+
+</html>

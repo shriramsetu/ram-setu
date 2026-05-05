@@ -1,0 +1,472 @@
+{% extends 'base.html' %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
+{% endblock %}
+
+{% block content %}
+<!-- Hero -->
+<section class="hero">
+    <div class="hero-bg"></div>
+    <div class="hero-overlay"></div>
+    <div class="hero-badge">🙏 Sacred & Authentic</div>
+    <div class="hero-content">
+        <h1>A Sacred<br>Symbol of Faith<br>from <span>Ram Setu</span></h1>
+        <div class="hero-btns">
+            <a href="#shop" class="btn-primary">Shop Now</a>
+        </div>
+    </div>
+    <div class="hero-dots">
+        <span class="active"></span>
+        <span></span>
+        <span></span>
+    </div>
+</section>
+
+<!-- Products Section -->
+<section class="products-section reveal" id="shop">
+    <div class="section-header">
+        <span class="ornament">⟐ ⟐ ⟐</span>
+        <h2>Our Popular Products</h2>
+        <p>Handpicked sacred stones from Ram Setu, each carrying centuries of faith</p>
+        <div class="gold-line"></div>
+    </div>
+    <div class="products-grid">
+        {% for product in featured_products %}
+        <div class="product-card">
+            <a href="{{ url_for('storefront.product_detail', slug=product.slug) }}" style="text-decoration:none; color:inherit; display:block">
+                <div class="product-img">
+                    <img src="{{ product.primary_image }}" alt="{{ product.name }}">
+                    {% if product.is_featured %}<div class="product-badge">Featured</div>{% endif %}
+                </div>
+                <div class="product-info">
+                    <h3>{{ product.name }}</h3>
+                    <div class="stars">★★★★★</div>
+                    <div class="product-price">₹{{ "%.0f"|format(product.price) }} {% if product.compare_price %}<del>₹{{ "%.0f"|format(product.compare_price) }}</del>{% endif %}</div>
+                </div>
+            </a>
+            <div class="product-info" style="padding-top:0">
+                <form action="{{ url_for('storefront.add_to_cart') }}" method="POST" class="add-to-cart-form">
+                    <input type="hidden" name="product_id" value="{{ product.id }}">
+                    <input type="hidden" name="qty" value="1">
+                    <button type="submit" class="btn-cart">🛒 Add to Cart</button>
+                </form>
+            </div>
+        </div>
+        {% else %}
+        <p style="text-align:center; grid-column: 1/-1;">No products found.</p>
+        {% endfor %}
+    </div>
+    <div class="view-all-wrap">
+        <a href="{{ url_for('storefront.shop') }}" class="btn-view-all">VIEW ALL PRODUCTS</a>
+    </div>
+</section>
+
+<!-- Proof + Testimonials -->
+<section class="proof-section reveal" id="proof">
+    <div>
+        <div class="section-header" style="text-align:left;margin-bottom:24px">
+            <span class="ornament" style="text-align:left;display:block">⟐ ⟐</span>
+            <h2>See the Proof</h2>
+            <p>Watch how Ram Setu stones float on water naturally</p>
+            <div class="gold-line" style="margin-left:0"></div>
+        </div>
+        <div class="proof-video-wrap">
+            <video id="proofVideo" src="{{ url_for('static', filename='images/gallery/WhatsApp Video 2026-04-30 at 8.57.06 PM.mp4') }}" playsinline preload="metadata" style="width:100%;height:100%;object-fit:cover;display:block"></video>
+            <div class="play-btn" id="proofPlayBtn" onclick="playProofVideo()">
+                <span>▶</span>
+            </div>
+        </div>
+        <a href="#gallery" style="color:var(--gold);font-weight:700;font-size:0.9rem;display:block;margin-top:16px;text-decoration:none">View More Videos →</a>
+    </div>
+    <div id="testimonials">
+        <div class="section-header" style="text-align:left;margin-bottom:24px">
+            <span class="ornament" style="text-align:left;display:block">⟐ ⟐</span>
+            <h2>What Devotees Say</h2>
+            <p>Stories of faith and divine connection from across India</p>
+            <div class="gold-line" style="margin-left:0"></div>
+        </div>
+        <div class="testimonials-container">
+            <div class="testimonials-track" id="testiTrack">
+                <div class="testimonial-card">
+                    <blockquote>"I felt a divine connection when I received this sacred stone. Truly blessed! The
+                        stone floats exactly as promised. This is a genuine piece of faith."</blockquote>
+                    <div class="testimonial-author">
+                        <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&q=80" alt="">
+                        <div>
+                            <strong>Ramesh Sharma</strong>
+                            <small>Ayodhya &nbsp; ★★★★★</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="testimonial-card">
+                    <blockquote>"The stone floats perfectly on water. A symbol of faith and miracles. I gifted it to
+                        my mother and she was overjoyed. Beautifully packaged."</blockquote>
+                    <div class="testimonial-author">
+                        <img src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&q=80" alt="">
+                        <div>
+                            <strong>Pooja Iyer</strong>
+                            <small>Chennai &nbsp; ★★★★★</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="testimonial-card">
+                    <blockquote>"Beautiful packaging and genuine product. Thank you RamSetu Divine Stones! I've
+                        placed my order three times already. Each stone is unique and powerful."</blockquote>
+                    <div class="testimonial-author">
+                        <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&q=80" alt="">
+                        <div>
+                            <strong>Amit Verma</strong>
+                            <small>Lucknow &nbsp; ★★★★★</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="testi-nav">
+            <button onclick="scrollTesti(-1)">←</button>
+            <button onclick="scrollTesti(1)">→</button>
+        </div>
+    </div>
+</section>
+
+<!-- Story of Ram Setu -->
+<section class="story-section reveal" id="about">
+    <div class="story-img">
+        <img src="{{ url_for('static', filename='images/ram-setu-story.webp') }}" alt="Ram Setu Story">
+    </div>
+    <div class="story-content">
+        <div class="label">Ancient Legend</div>
+        <h2>The Story of Ram Setu</h2>
+        <p>According to the Ramayana, Lord Ram and his army built the mighty bridge across the sea to Lanka. These
+            stones are believed to be a part of that divine legacy, a reminder of faith, devotion and the power of
+            belief. Carrying one brings the blessings of Lord Ram into your home.</p>
+        <p>Scientists have noted the unique pumice-like composition of these stones which allows them to float on
+            water — a phenomenon that devotees across the world regard as a divine miracle and a physical proof of
+            the ancient epic.</p>
+        <a href="#" class="btn-primary" style="align-self:flex-start">KNOW MORE</a>
+    </div>
+</section>
+
+<!-- Gallery / Divine Images -->
+<section class="gallery-section reveal" id="gallery">
+    <div class="section-header">
+        <span class="ornament" style="color:var(--gold-pale)">⟐ ⟐ ⟐</span>
+        <h2>Divine Gallery</h2>
+        <p style="color:rgba(255,255,255,0.6)">Sacred Ram Setu stones — each one a piece of divine history</p>
+        <div class="gold-line"></div>
+    </div>
+    <div class="gallery-grid">
+        <!-- Item 1: Hero — spans 2 cols × 2 rows -->
+        <div class="gallery-item gallery-hero">
+            <img src="{{ url_for('static', filename='images/gallery/WhatsApp Image 2026-04-30 at 8.57.04 PM.jpeg') }}" alt="Ram Setu Stone">
+            <div class="gallery-caption">
+                <span>Authentic Ram Setu Stones</span>
+                <small>Directly collected from the sacred shores</small>
+            </div>
+        </div>
+        <!-- Item 2: tall — spans 1 col × 2 rows -->
+        <div class="gallery-item gallery-tall">
+            <img src="{{ url_for('static', filename='images/gallery/WhatsApp Image 2026-04-30 at 8.57.05 PM.jpeg') }}" alt="Sacred Floating Stone">
+            <div class="gallery-caption">
+                <span>Sacred Floating Stones</span>
+                <small>Each stone floats naturally on water</small>
+            </div>
+        </div>
+        <!-- Item 3: normal -->
+        <div class="gallery-item">
+            <img src="{{ url_for('static', filename='images/gallery/WhatsApp Image 2026-04-30 at 8.57.05 PM (1).jpeg') }}" alt="Stone Collection">
+            <div class="gallery-caption">
+                <span>Stone Collection</span>
+                <small>Hand-picked with devotion and care</small>
+            </div>
+        </div>
+        <!-- Item 4: wide — spans 2 cols -->
+        <div class="gallery-item gallery-wide">
+            <img src="{{ url_for('static', filename='images/gallery/WhatsApp Image 2026-04-30 at 8.57.07 PM.jpeg') }}" alt="Divine Stone">
+            <div class="gallery-caption">
+                <span>Divine Stone — Proof of Legend</span>
+                <small>The miracle that amazed the world</small>
+            </div>
+        </div>
+        <!-- Item 5: normal -->
+        <div class="gallery-item">
+            <img src="{{ url_for('static', filename='images/gallery/WhatsApp Image 2026-04-30 at 8.57.08 PM.jpeg') }}" alt="Ram Setu Heritage">
+            <div class="gallery-caption">
+                <span>Ram Setu Heritage</span>
+                <small>Centuries of faith in every stone</small>
+            </div>
+        </div>
+        <!-- Item 6: normal -->
+        <div class="gallery-item">
+            <img src="{{ url_for('static', filename='images/gallery/WhatsApp Image 2026-04-30 at 8.57.09 PM (1).jpeg') }}" alt="Divine Stone Set">
+            <div class="gallery-caption">
+                <span>Divine Stone Set</span>
+                <small>Three sacred stones — one legacy</small>
+            </div>
+        </div>
+        <!-- Item 7: wide — spans 2 cols -->
+        <div class="gallery-item gallery-wide">
+            <img src="{{ url_for('static', filename='images/gallery/WhatsApp Image 2026-04-30 at 8.57.09 PM (2).jpeg') }}" alt="Sacred Collector's Edition">
+            <div class="gallery-caption">
+                <span>Sacred Collector's Edition</span>
+                <small>Limited — for the devoted soul</small>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Features Section -->
+<section class="features-section reveal">
+    <div class="section-header">
+        <span class="ornament">⟐ ⟐ ⟐</span>
+        <h2>Why Choose RamSetu Stones?</h2>
+        <p>Every stone is sacred, every delivery is divine</p>
+        <div class="gold-line"></div>
+    </div>
+    <div class="features-grid">
+        <div class="feature-card">
+            <span class="feature-icon">🏛️</span>
+            <h3>100% Authentic</h3>
+        </div>
+        <div class="feature-card">
+            <span class="feature-icon">💧</span>
+            <h3>Floats on Water</h3>
+        </div>
+        <div class="feature-card">
+            <span class="feature-icon">✍️</span>
+            <h3>Custom Engraving</h3>
+        </div>
+        <div class="feature-card">
+            <span class="feature-icon">🎁</span>
+            <h3>Premium Gifting</h3>
+        </div>
+        <div class="feature-card">
+            <span class="feature-icon">🚚</span>
+            <h3>Pan India Delivery</h3>
+        </div>
+        <div class="feature-card">
+            <span class="feature-icon">🙏</span>
+            <h3>Blessed with Prayers</h3>
+        </div>
+    </div>
+</section>
+
+<!-- Social Section -->
+<section class="social-section reveal">
+    <div class="section-header">
+        <span class="ornament">⟐ ⟐ ⟐</span>
+        <h2>Our Divine Community</h2>
+        <p>Join 50,000+ devotees on social media sharing their spiritual journey</p>
+        <div class="gold-line"></div>
+    </div>
+    <div class="social-grid">
+        <div class="social-item">
+            <img src="{{ url_for('static', filename='images/gallery/WhatsApp Image 2026-04-30 at 8.57.04 PM.jpeg') }}" alt="Ram Setu Stone">
+        </div>
+        <div class="social-item">
+            <img src="{{ url_for('static', filename='images/gallery/WhatsApp Image 2026-04-30 at 8.57.05 PM.jpeg') }}" alt="Floating Stone">
+        </div>
+        <div class="social-item social-video-item">
+            <video src="{{ url_for('static', filename='images/gallery/WhatsApp Video 2026-04-30 at 8.57.07 PM.mp4') }}" autoplay muted loop playsinline></video>
+        </div>
+        <div class="social-item">
+            <img src="{{ url_for('static', filename='images/gallery/WhatsApp Image 2026-04-30 at 8.57.07 PM.jpeg') }}" alt="Sacred Stone">
+        </div>
+        <div class="social-item social-video-item">
+            <video src="{{ url_for('static', filename='images/gallery/WhatsApp Video 2026-04-30 at 8.57.07 PM (1).mp4') }}" autoplay muted loop playsinline></video>
+        </div>
+        <div class="social-item">
+            <img src="{{ url_for('static', filename='images/gallery/WhatsApp Image 2026-04-30 at 8.57.09 PM (1).jpeg') }}" alt="Stone Collection">
+        </div>
+        <div class="social-item social-video-item">
+            <video src="{{ url_for('static', filename='images/gallery/WhatsApp Video 2026-04-30 at 8.57.09 PM.mp4') }}" autoplay muted loop playsinline></video>
+        </div>
+        <div class="social-item">
+            <img src="{{ url_for('static', filename='images/gallery/WhatsApp Image 2026-04-30 at 8.57.09 PM (2).jpeg') }}" alt="Divine Stone">
+        </div>
+    </div>
+    <div class="social-cta">
+        <p style="color:#888;font-size:0.95rem">Follow us and share your divine experience</p>
+        <div class="social-links">
+            <a href="#" class="social-btn insta">📷 Instagram</a>
+            <a href="#" class="social-btn yt">▶ YouTube</a>
+            <a href="#" class="social-btn fb">f Facebook</a>
+            <a href="#" class="social-btn wa">💬 WhatsApp</a>
+        </div>
+    </div>
+</section>
+
+<!-- Offer Banner -->
+<div class="offer-banner reveal">
+    <div class="offer-text">
+        <span class="offer-icon">🎁</span>
+        <h3>Limited Time Offer!</h3>
+        <p>Free Engraving + Free Shipping on all orders</p>
+    </div>
+    <a href="#shop" class="btn-order">ORDER NOW →</a>
+</div>
+
+<!-- Trust Bar -->
+<div class="trust-bar">
+    <div class="trust-item">
+        <div class="trust-icon">🏛️</div>
+        <div>
+            <h4>Authentic Source</h4>
+            <p>Carefully collected with devotion</p>
+        </div>
+    </div>
+    <div class="trust-item">
+        <div class="trust-icon">💧</div>
+        <div>
+            <h4>Tested & Verified</h4>
+            <p>Floats naturally on water</p>
+        </div>
+    </div>
+    <div class="trust-item">
+        <div class="trust-icon">📦</div>
+        <div>
+            <h4>Secure Packaging</h4>
+            <p>Packed with care & protection</p>
+        </div>
+    </div>
+    <div class="trust-item">
+        <div class="trust-icon">🚚</div>
+        <div>
+            <h4>Fast & Safe Delivery</h4>
+            <p>Pan India Delivery</p>
+        </div>
+    </div>
+    <div class="trust-item">
+        <div class="trust-icon">🛡️</div>
+        <div>
+            <h4>Trusted by 1000+</h4>
+            <p>Faith & trust we value</p>
+        </div>
+    </div>
+</div>
+
+<!-- FAQ -->
+<section class="faq-section reveal">
+    <div class="section-header">
+        <span class="ornament">⟐ ⟐ ⟐</span>
+        <h2>Frequently Asked Questions</h2>
+        <p>Everything you need to know about Ram Setu stones</p>
+        <div class="gold-line"></div>
+    </div>
+    <div class="faq-grid">
+        <div class="faq-item" onclick="toggleFaq(this)">
+            <h4>Do these stones really float on water? <span>+</span></h4>
+            <div class="faq-answer">Yes! Ram Setu stones float naturally on water due to their unique pumice-like
+                composition. This is a naturally occurring property that has amazed devotees and scientists alike.
+                We verify every stone before shipping.</div>
+        </div>
+        <div class="faq-item" onclick="toggleFaq(this)">
+            <h4>Where are these stones collected from? <span>+</span></h4>
+            <div class="faq-answer">All our stones are carefully and devotionally collected from the Ram Setu
+                (Adam's Bridge) region near Rameswaram, Tamil Nadu — the sacred site mentioned in the Valmiki
+                Ramayana.</div>
+        </div>
+        <div class="faq-item" onclick="toggleFaq(this)">
+            <h4>How long does delivery take? <span>+</span></h4>
+            <div class="faq-answer">We deliver across India typically within 3–7 working days. Express delivery
+                options are available. All orders come with tracking. COD is available on all orders above ₹299.
+            </div>
+        </div>
+        <div class="faq-item" onclick="toggleFaq(this)">
+            <h4>Can I get a custom engraving? <span>+</span></h4>
+            <div class="faq-answer">Absolutely! We offer custom engraving of "राम", "ॐ", "जय श्री राम" or any sacred
+                text of your choice. Currently we are offering FREE engraving on all orders during this limited
+                offer period.</div>
+        </div>
+        <div class="faq-item" onclick="toggleFaq(this)">
+            <h4>What is your return policy? <span>+</span></h4>
+            <div class="faq-answer">We offer hassle-free returns within 7 days of delivery. If your stone doesn't
+                float, we will replace it at no charge. We stand by the authenticity and quality of every product we
+                ship.</div>
+        </div>
+        <div class="faq-item" onclick="toggleFaq(this)">
+            <h4>Is COD (Cash on Delivery) available? <span>+</span></h4>
+            <div class="faq-answer">Yes! Cash on Delivery is available across India. We also accept UPI,
+                Credit/Debit Cards, Net Banking, and all major digital payment methods through our secure checkout.
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Newsletter -->
+<section class="newsletter-section reveal">
+    <div class="newsletter-text">
+        <h3>Stay Connected with Divine Updates</h3>
+        <p>Get special offers, spiritual stories & new product updates</p>
+    </div>
+    <div class="newsletter-form">
+        <input type="email" placeholder="Enter your email address">
+        <button class="btn-subscribe">SUBSCRIBE</button>
+    </div>
+    <div class="newsletter-wa">
+        <span>💬</span>
+        Join us on WhatsApp for exclusive offers & updates
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/index.js') }}"></script>
+<script>
+function playProofVideo() {
+    const video = document.getElementById('proofVideo');
+    const btn = document.getElementById('proofPlayBtn');
+    video.controls = true;
+    btn.style.display = 'none';
+    video.play();
+}
+
+// Social videos: play on hover
+document.querySelectorAll('.social-video-item').forEach(item => {
+    const video = item.querySelector('video');
+    item.addEventListener('mouseenter', () => video && video.play());
+    item.addEventListener('mouseleave', () => { if (video) { video.pause(); video.currentTime = 0; } });
+});
+</script>
+<script>
+document.querySelectorAll('.add-to-cart-form').forEach(form => {
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        const btn = this.querySelector('button');
+        const originalText = btn.innerHTML;
+        
+        btn.innerHTML = 'Adding...';
+        btn.disabled = true;
+
+        fetch(this.action, {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                btn.innerHTML = '✓ Added!';
+                btn.style.backgroundColor = '#25D366';
+                document.querySelector('.cart-count').textContent = data.cart_count;
+                setTimeout(() => {
+                    btn.innerHTML = originalText;
+                    btn.style.backgroundColor = '';
+                    btn.disabled = false;
+                }, 2000);
+            } else {
+                alert(data.message || 'Error adding to cart');
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        });
+    });
+});
+</script>
+{% endblock %}

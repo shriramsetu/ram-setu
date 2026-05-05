@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Processing Payment...</title>
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+</head>
+<body>
+<script>
+var options = {
+    key: "{{ razorpay_key }}",
+    amount: {{ (order.total * 100)|int }},
+    currency: "INR",
+    name: "RamSetu Divine Stones",
+    description: "Order #{{ order.order_number }}",
+    order_id: "{{ rz_order.id }}",
+    handler: function(response) {
+        fetch('/payment/verify', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                order_id: "{{ order.id }}",
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature
+            })
+        }).then(r => r.json()).then(d => {
+            if (d.success) window.location.href = d.redirect;
+            else alert('Payment verification failed. Please contact support.');
+        });
+    },
+    prefill: {
+        name: "{{ order.customer_name }}",
+        email: "{{ order.customer_email or '' }}",
+        contact: "{{ order.customer_phone }}"
+    },
+    theme: { color: "#C8860A" }
+};
+var rzp = new Razorpay(options);
+rzp.open();
+</script>
+</body>
+</html>

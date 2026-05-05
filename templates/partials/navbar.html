@@ -1,0 +1,62 @@
+<header class="site-header">
+<!-- Announcement Bar -->
+<div class="ann-bar">
+    <span>🙏 A Sacred Symbol of Faith from Ram Setu</span>
+    <span>👥 1000+ Happy Devotees &nbsp;|&nbsp; 🚚 COD Available &nbsp;|&nbsp; 📍 Pan India Delivery</span>
+</div>
+
+<!-- Navigation -->
+<nav>
+    <a href="{{ url_for('storefront.index') }}" class="logo">
+        <div class="logo-icon">🪨</div>
+        <div class="logo-text">
+            <div class="brand">RamSetu</div>
+            <div class="tagline">— Divine Stones —</div>
+        </div>
+    </a>
+    <ul class="nav-links">
+        <li><a href="{{ url_for('storefront.index') }}">Home</a></li>
+        <li><a href="{{ url_for('storefront.index') }}#about">About Ram Setu</a></li>
+        <li><a href="{{ url_for('storefront.shop') }}">Shop</a></li>
+        <li><a href="{{ url_for('storefront.index') }}#gallery">Gallery</a></li>
+        <li><a href="{{ url_for('storefront.index') }}#testimonials">Testimonials</a></li>
+        <li><a href="{{ url_for('storefront.index') }}#contact">Contact</a></li>
+    </ul>
+    <div class="nav-actions">
+        {% if current_user.is_authenticated %}
+            {% if current_user.is_admin %}
+            <a href="{{ url_for('admin.dashboard') }}" style="font-size:0.85rem;font-weight:700;color:var(--gold);text-decoration:none">Admin</a>
+            {% endif %}
+            <a href="{{ url_for('storefront.my_orders') }}" style="font-size:0.85rem;font-weight:600;color:var(--text);text-decoration:none">My Orders</a>
+            <a href="{{ url_for('storefront.cart') }}" style="font-size:1.2rem;cursor:pointer;position:relative;text-decoration:none">🛒
+                <sup class="cart-count" style="background:var(--gold);color:#fff;border-radius:50%;font-size:0.6rem;padding:1px 4px;position:absolute;top:-4px;right:-6px">{{ cart_count|default(0) }}</sup>
+            </a>
+            <a href="{{ url_for('auth.logout') }}" style="font-size:0.85rem;font-weight:600;color:var(--text);text-decoration:none">Logout</a>
+        {% else %}
+            <a href="{{ url_for('storefront.cart') }}" style="font-size:1.2rem;cursor:pointer;position:relative;text-decoration:none">🛒
+                <sup class="cart-count" style="background:var(--gold);color:#fff;border-radius:50%;font-size:0.6rem;padding:1px 4px;position:absolute;top:-4px;right:-6px">{{ cart_count|default(0) }}</sup>
+            </a>
+            <a href="{{ url_for('auth.login') }}" class="btn-login">Login/Register</a>
+        {% endif %}
+    </div>
+    <div class="hamburger" onclick="toggleMenu()">
+        <span></span><span></span><span></span>
+    </div>
+</nav>
+</header>
+
+<!-- Mobile Menu -->
+<div class="mobile-menu" id="mobileMenu">
+    <button class="mobile-menu-close" onclick="toggleMenu()">✕</button>
+    <a href="{{ url_for('storefront.index') }}" onclick="toggleMenu()">Home</a>
+    <a href="{{ url_for('storefront.shop') }}" onclick="toggleMenu()">Shop</a>
+    <a href="{{ url_for('storefront.cart') }}" onclick="toggleMenu()">Cart ({{ cart_count|default(0) }})</a>
+    {% if current_user.is_authenticated %}
+    <a href="{{ url_for('storefront.my_orders') }}" onclick="toggleMenu()">My Orders</a>
+    <a href="{{ url_for('auth.logout') }}" onclick="toggleMenu()">Logout</a>
+    {% else %}
+    <a href="{{ url_for('auth.login') }}" onclick="toggleMenu()">Login</a>
+    <a href="{{ url_for('auth.register') }}" onclick="toggleMenu()">Register</a>
+    {% endif %}
+    <a href="{{ url_for('storefront.index') }}#contact" onclick="toggleMenu()">Contact</a>
+</div>

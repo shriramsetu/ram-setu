@@ -1,0 +1,164 @@
+{% extends 'base.html' %}
+
+{% block title %}Shop Sacred Stones - RamSetu Divine Stones{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/shop.css') }}">
+{% endblock %}
+
+{% block content %}
+<!-- Shop Banner -->
+<section class="shop-banner">
+    <h1>Sacred Collection</h1>
+    <div class="breadcrumb">Home / Shop</div>
+</section>
+
+<!-- Shop Container -->
+<div class="shop-container">
+    <!-- Mobile Filter Dropdown -->
+    <div class="mobile-filter-dropdown">
+        <select id="mobileFilterSelect" onchange="handleMobileFilter(this)">
+            <option value="">-- All Filters --</option>
+            <optgroup label="Categories">
+                <option value="cat-all">All Products</option>
+                {% for cat in categories %}
+                <option value="cat-{{ cat.slug }}">{{ cat.name }}</option>
+                {% endfor %}
+            </optgroup>
+            <optgroup label="Sort By">
+                <option value="sort-newest">Newest First</option>
+                <option value="sort-price_low">Price: Low to High</option>
+                <option value="sort-price_high">Price: High to Low</option>
+                <option value="sort-name">Name: A-Z</option>
+            </optgroup>
+        </select>
+    </div>
+
+    <!-- Sidebar Filters -->
+    <aside class="shop-sidebar">
+        <div class="filter-group">
+            <h3>Search</h3>
+            <form method="GET" action="{{ url_for('storefront.shop') }}">
+                <div class="search-box">
+                    <input type="text" name="q" placeholder="Search sacred stones..." value="{{ q }}">
+                    <button type="submit" class="search-icon" style="background:none;border:none;cursor:pointer">🔍</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="filter-group">
+            <h3>Categories</h3>
+            <ul class="filter-list">
+                <li><a href="{{ url_for('storefront.shop') }}" style="text-decoration:none;color:{% if not current_category %}var(--gold){% else %}#555{% endif %};font-weight:{% if not current_category %}700{% else %}400{% endif %};font-size:0.88rem">All Products</a></li>
+                {% for cat in categories %}
+                <li><a href="{{ url_for('storefront.shop', category=cat.slug) }}" style="text-decoration:none;color:{% if current_category == cat.slug %}var(--gold){% else %}#555{% endif %};font-weight:{% if current_category == cat.slug %}700{% else %}400{% endif %};font-size:0.88rem">{{ cat.name }} ({{ cat.products.filter_by(is_active=True).count() }})</a></li>
+                {% endfor %}
+            </ul>
+        </div>
+
+        <div class="filter-group">
+            <h3>Sort By</h3>
+            <select class="sort-dropdown" id="sortDropdown" onchange="handleSort(this)">
+                <option value="">-- Select --</option>
+                <option value="newest" {% if current_sort == 'newest' %}selected{% endif %}>Newest First</option>
+                <option value="price_low" {% if current_sort == 'price_low' %}selected{% endif %}>Price: Low to High</option>
+                <option value="price_high" {% if current_sort == 'price_high' %}selected{% endif %}>Price: High to Low</option>
+                <option value="name" {% if current_sort == 'name' %}selected{% endif %}>Name: A-Z</option>
+            </select>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <section class="shop-main">
+        <div class="shop-content-header">
+            <div class="result-count">Showing {{ products.items|length }} of {{ products.total }} results{% if q %} for "{{ q }}"{% endif %}</div>
+        </div>
+
+        <div class="shop-products-grid">
+            {% for product in products.items %}
+            <div class="product-card-wrapper">
+                <a href="{{ url_for('storefront.product_detail', slug=product.slug) }}" class="product-card" style="text-decoration:none;color:inherit">
+                    <div class="product-img">
+                        <img src="{{ product.primary_image or '' }}" alt="{{ product.name }}">
+                        {% if product.discount_percent %}<div class="product-badge">{{ product.discount_percent }}% OFF</div>
+                        {% elif product.is_featured %}<div class="product-badge">Featured</div>{% endif %}
+                    </div>
+                    <div class="product-info">
+                        <h3>{{ product.name }}</h3>
+                        <div class="stars">★★★★★</div>
+                        <div class="product-price">₹{{ "%.0f"|format(product.price) }}
+                            {% if product.compare_price %}<del>₹{{ "%.0f"|format(product.compare_price) }}</del>{% endif %}
+                        </div>
+                        {% if not product.in_stock %}<span style="color:#e53935;font-size:0.78rem;font-weight:700">Out of Stock</span>{% endif %}
+                    </div>
+                </a>
+                <form action="{{ url_for('storefront.add_to_cart') }}" method="POST" class="product-card-form">
+                    <input type="hidden" name="product_id" value="{{ product.id }}">
+                    <input type="hidden" name="qty" value="1">
+                    <button type="submit" class="product-card-btn">🛒 Add to Cart</button>
+                </form>
+            </div>
+            {% else %}
+            <div style="grid-column:1/-1;text-align:center;padding:60px 20px">
+                <div style="font-size:3rem;margin-bottom:16px">🔍</div>
+                <p style="color:#888">No products found{% if q %} for "{{ q }}"{% endif %}.</p>
+                <a href="{{ url_for('storefront.shop') }}" style="color:var(--gold);font-weight:600;text-decoration:none;margin-top:8px;display:inline-block">View all products →</a>
+            </div>
+            {% endfor %}
+        </div>
+        </div>
+
+        {% if products.pages > 1 %}
+        <div style="display:flex;justify-content:center;gap:8px;margin-top:40px">
+            {% for p in products.iter_pages() %}
+            {% if p %}
+            <a href="?page={{ p }}&q={{ q }}&category={{ current_category }}&sort={{ current_sort }}" style="padding:8px 16px;border-radius:8px;text-decoration:none;font-weight:600;{% if p == products.page %}background:var(--gold);color:#fff{% else %}background:#fff;color:var(--text);border:1px solid #ddd{% endif %}">{{ p }}</a>
+            {% else %}<span style="padding:8px">...</span>{% endif %}
+            {% endfor %}
+        </div>
+        {% endif %}
+    </section>
+</div>
+
+<script>
+function handleSort(select) {
+    const sort = select.value;
+    if (!sort) return;
+
+    const params = new URLSearchParams();
+    const urlParams = new URLSearchParams(window.location.search);
+
+    if (urlParams.get('q')) params.set('q', urlParams.get('q'));
+    if (urlParams.get('category')) params.set('category', urlParams.get('category'));
+    if (urlParams.get('page')) params.set('page', urlParams.get('page'));
+
+    params.set('sort', sort);
+    window.location.href = '{{ url_for("storefront.shop") }}?' + params.toString();
+}
+
+function handleMobileFilter(select) {
+    const value = select.value;
+    if (!value) return;
+
+    const params = new URLSearchParams();
+    const urlParams = new URLSearchParams(window.location.search);
+
+    if (value.startsWith('cat-')) {
+        const catSlug = value.substring(4);
+        if (catSlug !== 'all') {
+            params.set('category', catSlug);
+        }
+    } else if (value.startsWith('sort-')) {
+        const sortType = value.substring(5);
+        params.set('sort', sortType);
+        if (urlParams.get('category')) params.set('category', urlParams.get('category'));
+    }
+
+    if (urlParams.get('q')) params.set('q', urlParams.get('q'));
+    if (urlParams.get('page')) params.set('page', '1');
+
+    window.location.href = '{{ url_for("storefront.shop") }}?' + params.toString();
+}
+</script>
+{% endblock %}
