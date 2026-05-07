@@ -2,6 +2,7 @@ import os
 import tempfile
 
 from flask import Flask
+from flask import send_from_directory, abort
 from flask_login import LoginManager
 from sqlalchemy import inspect, text
 from flask_migrate import Migrate
@@ -42,6 +43,17 @@ def create_app():
     from routes.auth import auth_bp
     from routes.admin import admin_bp
     from routes.storefront import store_bp
+
+    # Fallback route to serve static files directly from the repository. This
+    # helps when hosting platforms route /static/* to the function rather than
+    # serving files automatically. send_from_directory will return the file
+    # from the `static/` folder if present.
+    @app.route('/static/<path:filename>')
+    def _static(filename):
+        try:
+            return send_from_directory(app.static_folder, filename)
+        except Exception:
+            abort(404)
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(admin_bp)
