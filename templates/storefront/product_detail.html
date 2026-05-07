@@ -79,20 +79,4 @@
 </section>
 {% endif %}
 
-<script>
-document.getElementById('addToCartForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    fetch(this.action, { method: 'POST', body: new FormData(this) })
-        .then(r => r.json()).then(d => {
-            if (d.success) {
-                const btn = this.querySelector('button[type=submit]');
-                btn.innerHTML = '✓ Added to Cart!';
-                btn.style.background = '#25D366';
-                setTimeout(() => { btn.innerHTML = '🛒 Add to Cart'; btn.style.background = ''; }, 2000);
-                const cc = document.querySelector('.cart-count');
-                if (cc) cc.textContent = d.cart_count;
-            }
-        });
-});
-</script>
 {% endblock %}

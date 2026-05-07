@@ -429,44 +429,4 @@ document.querySelectorAll('.social-video-item').forEach(item => {
     item.addEventListener('mouseleave', () => { if (video) { video.pause(); video.currentTime = 0; } });
 });
 </script>
-<script>
-document.querySelectorAll('.add-to-cart-form').forEach(form => {
-    form.addEventListener('submit', function(e) {
-        e.preventDefault();
-        const formData = new FormData(this);
-        const btn = this.querySelector('button');
-        const originalText = btn.innerHTML;
-        
-        btn.innerHTML = 'Adding...';
-        btn.disabled = true;
-
-        fetch(this.action, {
-            method: 'POST',
-            body: formData
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                btn.innerHTML = '✓ Added!';
-                btn.style.backgroundColor = '#25D366';
-                document.querySelector('.cart-count').textContent = data.cart_count;
-                setTimeout(() => {
-                    btn.innerHTML = originalText;
-                    btn.style.backgroundColor = '';
-                    btn.disabled = false;
-                }, 2000);
-            } else {
-                alert(data.message || 'Error adding to cart');
-                btn.innerHTML = originalText;
-                btn.disabled = false;
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            btn.innerHTML = originalText;
-            btn.disabled = false;
-        });
-    });
-});
-</script>
 {% endblock %}
