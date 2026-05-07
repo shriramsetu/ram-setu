@@ -13,7 +13,7 @@ class Config:
         'DATABASE_URL',
         os.environ.get(
             'SUPABASE_DATABASE_URL',
-            'sqlite:///ramsetu.db'
+            'sqlite:////tmp/ramsetu.db' if os.environ.get('VERCEL') else 'sqlite:///ramsetu.db'
         )
     )
     SQLALCHEMY_TRACK_MODIFICATIONS = False

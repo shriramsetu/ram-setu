@@ -1,3 +1,6 @@
+import os
+import tempfile
+
 from flask import Flask
 from flask_login import LoginManager
 from sqlalchemy import inspect, text
@@ -14,7 +17,12 @@ login_manager.login_message_category = 'info'
 
 
 def create_app():
-    app = Flask(__name__)
+    instance_path = None
+    if os.environ.get('VERCEL'):
+        tmp = tempfile.gettempdir()
+        instance_path = os.path.join(tmp, 'ram_setu_instance')
+        instance_path = os.path.abspath(instance_path)
+    app = Flask(__name__, instance_path=instance_path) if instance_path else Flask(__name__)
     app.config.from_object(Config)
     Config.init_cloudinary()
 

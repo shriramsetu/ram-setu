@@ -1,7 +1,12 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, session
 from flask_login import login_required, current_user
 from models import db, Product, ProductImage, Category, Order, OrderItem, Coupon, SiteSetting
-import razorpay
+
+# Import razorpay lazily; on deployments without the package, disable razorpay features
+try:
+    import razorpay
+except Exception:
+    razorpay = None
 
 store_bp = Blueprint('storefront', __name__)
 
