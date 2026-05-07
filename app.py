@@ -22,7 +22,12 @@ def create_app():
         tmp = tempfile.gettempdir()
         instance_path = os.path.join(tmp, 'ram_setu_instance')
         instance_path = os.path.abspath(instance_path)
-    app = Flask(__name__, instance_path=instance_path) if instance_path else Flask(__name__)
+    # Ensure Flask serves the `static/` folder at `/static` explicitly. Some hosts
+    # rewrite routes and it's safer to set these values explicitly.
+    if instance_path:
+        app = Flask(__name__, static_folder='static', static_url_path='/static', instance_path=instance_path)
+    else:
+        app = Flask(__name__, static_folder='static', static_url_path='/static')
     app.config.from_object(Config)
     Config.init_cloudinary()
 
