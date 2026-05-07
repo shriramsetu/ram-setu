@@ -2,6 +2,7 @@ import os
 
 import cloudinary
 from dotenv import load_dotenv
+from sqlalchemy.pool import NullPool
 
 load_dotenv()
 
@@ -17,16 +18,21 @@ class Config:
         )
     )
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    SQLALCHEMY_ENGINE_OPTIONS = (
-        {
-            'pool_size': 5,
-            'pool_recycle': 300,
-            'pool_pre_ping': True,
-            'max_overflow': 2,
-        }
-        if SQLALCHEMY_DATABASE_URI.startswith('postgresql')
-        else {}
-    )
+    # For traditional deployments use a small pool; for serverless / Supabase
+    # pooler usage, prefer NullPool (no persistent pooled connections).
+    if SQLALCHEMY_DATABASE_URI.startswith('postgresql'):
+        # If running on Vercel or using a Supabase pooler URL, avoid persistent pools
+        if os.environ.get('VERCEL') or 'pooler' in SQLALCHEMY_DATABASE_URI or os.environ.get('SUPABASE_POOLER'):
+            SQLALCHEMY_ENGINE_OPTIONS = {'poolclass': NullPool}
+        else:
+            SQLALCHEMY_ENGINE_OPTIONS = {
+                'pool_size': 5,
+                'pool_recycle': 300,
+                'pool_pre_ping': True,
+                'max_overflow': 2,
+            }
+    else:
+        SQLALCHEMY_ENGINE_OPTIONS = {}
 
     # Cloudinary
     CLOUDINARY_URL = os.environ.get('CLOUDINARY_URL')
