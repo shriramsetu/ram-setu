@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+
+{% block title %}Terms & Conditions – RamSetu Divine Stones{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/legal.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="legal-container">
+    <div class="legal-header">
+        <h1>Terms & Conditions</h1>
+        <div class="gold-line"></div>
+    </div>
+
+    <div class="legal-content">
+        <p>Welcome to RamSetu Divine Stones. By accessing or using our website, you agree to comply with and be bound by the following terms and conditions of use.</p>
+
+        <h2>1. Use of the Website</h2>
+        <p>By accessing the website, you warrant and represent to the website owner that you are legally entitled to do so and to make use of information made available via the website.</p>
+
+        <h2>2. Product Information</h2>
+        <p>We strive to provide accurate product descriptions and pricing. However, RamSetu Divine Stones does not warrant that product descriptions or other content is accurate, complete, reliable, current, or error-free. The "sacred stones" are sold as spiritual and devotional collectibles.</p>
+
+        <h2>3. Intellectual Property</h2>
+        <p>The trademarks, names, logos, and service marks (collectively “trademarks”) displayed on this website are registered and unregistered trademarks of the website owner. Nothing contained on this website should be construed as granting any license or right to use any trademark without the prior written permission of the website owner.</p>
+
+        <h2>4. External Links</h2>
+        <p>External links may be provided for your convenience, but they are beyond the control of the website owner and no representation is made as to their content. Use or reliance on any external links and the content thereon provided is at your own risk.</p>
+
+        <h2>5. Disclaimer of Liability</h2>
+        <p>The website owner shall not be responsible for and disclaims all liability for any loss, liability, damage (whether direct, indirect or consequential), personal injury or expense of any nature whatsoever which may be suffered by you or any third party.</p>
+
+        <h2>6. Conflict of Terms</h2>
+        <p>If there is a conflict or contradiction between the provisions of these website terms and conditions and any other relevant terms and conditions, policies or notices, the other relevant terms and conditions, policies or notices which relate specifically to a particular section or module of the website shall prevail.</p>
+        
+        <h2>7. Governing Law</h2>
+        <p>These terms and conditions shall be governed by and construed in accordance with the laws of India. Any disputes relating to these terms and conditions shall be subject to the exclusive jurisdiction of the courts in Ayodhya/Lucknow, Uttar Pradesh.</p>
+    </div>
+</div>
+{% endblock %}

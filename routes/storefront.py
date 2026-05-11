@@ -334,3 +334,26 @@ def order_success(order_id):
 def my_orders():
     orders = Order.query.filter_by(user_id=current_user.id).order_by(Order.created_at.desc()).all()
     return render_template('storefront/my_orders.html', orders=orders)
+
+
+# ───────── Legal Pages for Razorpay ─────────
+
+@store_bp.route('/terms')
+def terms():
+    return render_template('legal/terms.html', title="Terms & Conditions")
+
+@store_bp.route('/privacy')
+def privacy():
+    return render_template('legal/privacy.html', title="Privacy Policy")
+
+@store_bp.route('/shipping-policy')
+def shipping_policy():
+    return render_template('legal/shipping.html', title="Shipping & Delivery Policy")
+
+@store_bp.route('/refund-policy')
+def refund_policy():
+    return render_template('legal/refund.html', title="Return & Refund Policy")
+
+@store_bp.route('/contact')
+def contact():
+    return render_template('legal/contact.html', title="Contact Us")

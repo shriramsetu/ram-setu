@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+
+{% block title %}Shipping & Delivery Policy – RamSetu Divine Stones{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/legal.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="legal-container">
+    <div class="legal-header">
+        <h1>Shipping & Delivery Policy</h1>
+        <div class="gold-line"></div>
+    </div>
+
+    <div class="legal-content">
+        <p>At RamSetu Divine Stones, we take great care in delivering your sacred items to you as quickly and safely as possible.</p>
+
+        <h2>1. Shipping Coverage</h2>
+        <p>We ship to most locations across India. For international shipping inquiries, please contact our support team directly.</p>
+
+        <h2>2. Shipping Charges</h2>
+        <ul>
+            <li>Free shipping is available on all orders above ₹999.</li>
+            <li>For orders below ₹999, a flat shipping fee of ₹49 is charged.</li>
+            <li>Shipping charges are non-refundable.</li>
+        </ul>
+
+        <h2>3. Delivery Timeline</h2>
+        <ul>
+            <li>Orders are typically processed within 24–48 hours.</li>
+            <li>Delivery usually takes 3–5 working days for metro cities.</li>
+            <li>For other locations, it may take 5–7 working days depending on the courier service.</li>
+            <li>Delivery timelines are estimates and may be affected by public holidays, weather conditions, or other unforeseen circumstances.</li>
+        </ul>
+
+        <h2>4. Order Tracking</h2>
+        <p>Once your order is shipped, you will receive a tracking number via email/SMS. You can use this number to track your package on our courier partner's website.</p>
+
+        <h2>5. Secure Packaging</h2>
+        <p>Every stone is packed with multiple layers of protective material to ensure it reaches you in perfect condition. We understand the sacred value of these items and treat them with the utmost respect.</p>
+
+        <h2>6. Delivery Issues</h2>
+        <p>If you receive a damaged package or the product is missing, please contact us within 24 hours of delivery with images of the package. We will investigate and provide a resolution immediately.</p>
+    </div>
+</div>
+{% endblock %}

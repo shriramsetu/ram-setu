@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+
+{% block title %}Privacy Policy – RamSetu Divine Stones{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/legal.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="legal-container">
+    <div class="legal-header">
+        <h1>Privacy Policy</h1>
+        <div class="gold-line"></div>
+    </div>
+
+    <div class="legal-content">
+        <p>Your privacy is important to us. It is RamSetu Divine Stones' policy to respect your privacy regarding any information we may collect from you across our website.</p>
+
+        <h2>1. Information We Collect</h2>
+        <p>We only ask for personal information when we truly need it to provide a service to you. We collect it by fair and lawful means, with your knowledge and consent. We also let you know why we’re collecting it and how it will be used.</p>
+
+        <h2>2. Use of Information</h2>
+        <p>We use the collected information primarily to process your orders, maintain your account, and improve our services. We may also use your contact information to send you updates about your order or promotional offers if you have opted in.</p>
+
+        <h2>3. Data Storage</h2>
+        <p>We only retain collected information for as long as necessary to provide you with your requested service. What data we store, we’ll protect within commercially acceptable means to prevent loss and theft, as well as unauthorized access, disclosure, copying, use or modification.</p>
+
+        <h2>4. Sharing of Data</h2>
+        <p>We don’t share any personally identifying information publicly or with third-parties, except when required to by law or to facilitate your payment and delivery (e.g., sharing your address with our courier partners or payment information with Razorpay).</p>
+
+        <h2>5. Cookies</h2>
+        <p>We use cookies to collect information about your activity across our site. This helps us understand how you use our site and serve you content based on preferences you have specified.</p>
+
+        <h2>6. Your Rights</h2>
+        <p>You are free to refuse our request for your personal information, with the understanding that we may be unable to provide you with some of your desired services.</p>
+
+        <h2>7. Consent</h2>
+        <p>Your continued use of our website will be regarded as acceptance of our practices around privacy and personal information. If you have any questions about how we handle user data and personal information, feel free to contact us.</p>
+    </div>
+</div>
+{% endblock %}

@@ -23,29 +23,29 @@
         <div>
             <h5>Quick Links</h5>
             <ul>
-                <li><a href="#">Home</a></li>
-                <li><a href="#about">About Ram Setu</a></li>
-                <li><a href="#shop">Shop</a></li>
-                <li><a href="#gallery">Videos</a></li>
-                <li><a href="#testimonials">Testimonials</a></li>
-                <li><a href="#blog">Blog</a></li>
-                <li><a href="#contact">Contact</a></li>
+                <li><a href="{{ url_for('storefront.index') }}">Home</a></li>
+                <li><a href="{{ url_for('storefront.index') }}#about">About Ram Setu</a></li>
+                <li><a href="{{ url_for('storefront.shop') }}">Shop</a></li>
+                <li><a href="{{ url_for('storefront.index') }}#gallery">Videos</a></li>
+                <li><a href="{{ url_for('storefront.index') }}#testimonials">Testimonials</a></li>
+                <li><a href="{{ url_for('storefront.index') }}#blog">Blog</a></li>
+                <li><a href="{{ url_for('storefront.contact') }}">Contact</a></li>
             </ul>
         </div>
         <div>
             <h5>Customer Care</h5>
             <ul>
-                <li><a href="#">Shipping & Delivery</a></li>
-                <li><a href="#">Return & Refund</a></li>
-                <li><a href="#">Terms & Conditions</a></li>
-                <li><a href="#">Privacy Policy</a></li>
-                <li><a href="#">FAQ</a></li>
+                <li><a href="{{ url_for('storefront.shipping_policy') }}">Shipping & Delivery</a></li>
+                <li><a href="{{ url_for('storefront.refund_policy') }}">Return & Refund</a></li>
+                <li><a href="{{ url_for('storefront.terms') }}">Terms & Conditions</a></li>
+                <li><a href="{{ url_for('storefront.privacy') }}">Privacy Policy</a></li>
+                <li><a href="{{ url_for('storefront.index') }}#faq">FAQ</a></li>
             </ul>
         </div>
         <div>
             <h5>Contact Us</h5>
             <div class="contact-item"><span>📞</span><span>+91 98765 43210</span></div>
-            <div class="contact-item"><span>✉️</span><span>info@ramsetudivinesones.com</span></div>
+            <div class="contact-item"><span>✉️</span><span>info@ramsetudivinestones.com</span></div>
             <div class="contact-item"><span>📍</span><span>Ayodhya, Uttar Pradesh, India</span></div>
             <div class="contact-item"><span>🕐</span><span>Mon–Sat: 9:00 AM – 7:00 PM</span></div>
         </div>
