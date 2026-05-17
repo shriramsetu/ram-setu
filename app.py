@@ -2,7 +2,7 @@ import os
 import tempfile
 
 from flask import Flask
-from flask import send_from_directory, abort
+from flask import send_from_directory, abort, render_template
 from flask_login import LoginManager
 from sqlalchemy import inspect, text
 from flask_migrate import Migrate
@@ -58,6 +58,10 @@ def create_app():
     app.register_blueprint(auth_bp)
     app.register_blueprint(admin_bp)
     app.register_blueprint(store_bp)
+
+    @app.errorhandler(404)
+    def page_not_found(e):
+        return render_template('404.html'), 404
 
     # Avoid running table creation, migrations, and seeding inside serverless execution.
     # This reduces serverless cold start times by 1.5s to 2.5s.
