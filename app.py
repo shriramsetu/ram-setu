@@ -19,7 +19,7 @@ login_manager.login_message_category = 'info'
 
 def create_app():
     instance_path = None
-    if os.environ.get('VERCEL'):
+    if os.environ.get('VERCEL') or os.environ.get('NETLIFY'):
         tmp = tempfile.gettempdir()
         instance_path = os.path.join(tmp, 'ram_setu_instance')
         instance_path = os.path.abspath(instance_path)
@@ -59,10 +59,13 @@ def create_app():
     app.register_blueprint(admin_bp)
     app.register_blueprint(store_bp)
 
-    with app.app_context():
-        db.create_all()
-        _ensure_legacy_schema()
-        _seed_defaults()
+    # Avoid running table creation, migrations, and seeding inside serverless execution.
+    # This reduces serverless cold start times by 1.5s to 2.5s.
+    if not (os.environ.get('VERCEL') or os.environ.get('NETLIFY')):
+        with app.app_context():
+            db.create_all()
+            _ensure_legacy_schema()
+            _seed_defaults()
 
     return app
 

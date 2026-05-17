@@ -1,0 +1,16 @@
+[build]
+  # Copy static folder to the publish directory during the build process
+  # so that Netlify serves static assets directly via its high-speed global CDN
+  command = "mkdir -p public && cp -r static public/"
+  publish = "public"
+  functions = "netlify/functions"
+
+[functions]
+  node_bundler = "esbuild"
+
+[[redirects]]
+  # Netlify automatically prioritizes files inside the publish folder (public/static/*).
+  # All other dynamic routes will fall back here and be executed by your Flask app.
+  from = "/*"
+  to = "/.netlify/functions/api"
+  status = 200

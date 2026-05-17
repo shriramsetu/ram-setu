@@ -14,15 +14,15 @@ class Config:
         'DATABASE_URL',
         os.environ.get(
             'SUPABASE_DATABASE_URL',
-            'sqlite:////tmp/ramsetu.db' if os.environ.get('VERCEL') else 'sqlite:///ramsetu.db'
+            'sqlite:////tmp/ramsetu.db' if (os.environ.get('VERCEL') or os.environ.get('NETLIFY')) else 'sqlite:///ramsetu.db'
         )
     )
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     # For traditional deployments use a small pool; for serverless / Supabase
     # pooler usage, prefer NullPool (no persistent pooled connections).
     if SQLALCHEMY_DATABASE_URI.startswith('postgresql'):
-        # If running on Vercel or using a Supabase pooler URL, avoid persistent pools
-        if os.environ.get('VERCEL') or 'pooler' in SQLALCHEMY_DATABASE_URI or os.environ.get('SUPABASE_POOLER'):
+        # If running on Vercel or Netlify or using a Supabase pooler URL, avoid persistent pools
+        if os.environ.get('VERCEL') or os.environ.get('NETLIFY') or 'pooler' in SQLALCHEMY_DATABASE_URI or os.environ.get('SUPABASE_POOLER'):
             SQLALCHEMY_ENGINE_OPTIONS = {'poolclass': NullPool}
         else:
             SQLALCHEMY_ENGINE_OPTIONS = {
