@@ -1,15 +1,20 @@
 [build]
-  # Copy static folder to the publish directory during build for global CDN delivery
-  command = "mkdir -p public && cp -r static public/"
-  publish = "public"
+  command = "npm run build"
+  publish = "dist"
 
 [functions]
-  # Modern, explicit configuration to register Python serverless functions
   directory = "netlify/functions"
+  node_bundler = "esbuild"
 
 [[redirects]]
-  # Netlify CDN will serve anything inside public/static/* directly.
-  # All other dynamic routes will fall back here and be executed by your Flask app.
-  from = "/*"
-  to = "/.netlify/functions/api"
+  from = "/sitemap.xml"
+  to = "/.netlify/functions/sitemap"
   status = 200
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+[build.environment]
+  NODE_VERSION = "18"
