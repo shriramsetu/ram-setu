@@ -22,7 +22,7 @@ export async function getFeaturedProducts() {
     .order('created_at', { ascending: false })
     .limit(8)
   if (error) throw error
-  return data || []
+  return (data || []).map(p => ({ ...p, stock_qty: p.stock }))
 }
 
 export async function getProducts({ q = '', category = '', sort = 'newest', page = 1, pageSize = 12 } = {}) {
@@ -46,7 +46,8 @@ export async function getProducts({ q = '', category = '', sort = 'newest', page
 
   const { data, error, count } = await query
   if (error) throw error
-  return { items: data || [], total: count || 0, pages: Math.ceil((count || 0) / pageSize) }
+  const items = (data || []).map(p => ({ ...p, stock_qty: p.stock }))
+  return { items, total: count || 0, pages: Math.ceil((count || 0) / pageSize) }
 }
 
 
@@ -66,6 +67,9 @@ export async function getProductBySlug(slug) {
     .eq('slug', slug)
     .single()
   if (error) throw error
+  if (data) {
+    data.stock_qty = data.stock
+  }
   return data
 }
 

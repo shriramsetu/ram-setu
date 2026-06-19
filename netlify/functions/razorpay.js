@@ -1,14 +1,35 @@
 import Razorpay from 'razorpay'
+import { createClient } from '@supabase/supabase-js'
+
+const supabase = createClient(
+  process.env.VITE_SUPABASE_URL || 'https://placeholder.supabase.co',
+  process.env.VITE_SUPABASE_ANON_KEY || 'placeholder'
+)
 
 export const handler = async (event) => {
   if (event.httpMethod !== 'POST') {
     return { statusCode: 405, body: JSON.stringify({ error: 'Method not allowed' }) }
   }
 
-  const key_id = process.env.RAZORPAY_KEY_ID
-  const key_secret = process.env.RAZORPAY_KEY_SECRET
+  let key_id = process.env.RAZORPAY_KEY_ID
+  let key_secret = process.env.RAZORPAY_KEY_SECRET
 
-  if (!key_id || !key_secret) {
+  // Fetch settings from database if available
+  try {
+    const { data: dbKeyId } = await supabase.from('site_settings').select('value').eq('key', 'razorpay_key_id').single()
+    const { data: dbKeySecret } = await supabase.from('site_settings').select('value').eq('key', 'razorpay_key_secret').single()
+    
+    if (dbKeyId?.value && dbKeyId.value !== 'your-razorpay-key-id') {
+      key_id = dbKeyId.value
+    }
+    if (dbKeySecret?.value && dbKeySecret.value !== 'your-razorpay-key-secret') {
+      key_secret = dbKeySecret.value
+    }
+  } catch (e) {
+    // Ignore DB fetch failure, fallback to env variables
+  }
+
+  if (!key_id || !key_secret || key_id === 'your-razorpay-key-id' || key_secret === 'your-razorpay-key-secret') {
     return {
       statusCode: 500,
       body: JSON.stringify({ error: 'Razorpay keys not configured' }),

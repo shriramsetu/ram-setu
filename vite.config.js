@@ -7,4 +7,13 @@ export default defineConfig({
     outDir: 'dist',
     assetsDir: 'assets',
   },
+  server: {
+    proxy: {
+      '/.netlify/functions': {
+        target: 'http://localhost:9999',
+        changeOrigin: true,
+        secure: false,
+      },
+    },
+  },
 })

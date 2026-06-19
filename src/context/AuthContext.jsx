@@ -18,7 +18,7 @@ export function AuthProvider({ children }) {
         .from('users')
         .select('is_admin')
         .eq('id', currentUser.id)
-        .single()
+        .maybeSingle()
       setIsAdmin(data?.is_admin === true)
     } catch {
       setIsAdmin(false)
