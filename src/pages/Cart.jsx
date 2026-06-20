@@ -1,7 +1,9 @@
+import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Helmet } from 'react-helmet-async'
 import { useCart } from '../context/CartContext'
 import { useAuth } from '../context/AuthContext'
+import { supabase } from '../lib/supabase'
 import { Trash2, ShoppingCart, ArrowRight, ArrowLeft, ShieldCheck, Truck, RefreshCw, ShoppingBag } from 'lucide-react'
 
 export default function Cart() {
@@ -45,7 +47,37 @@ export default function Cart() {
     )
   }
 
-  const shipping = cartTotal >= 499 ? 0 : 79
+  // Load settings dynamically
+  const [settings, setSettings] = useState({
+    shipping_threshold: 499,
+    shipping_flat_rate: 79,
+  })
+
+  useEffect(() => {
+    async function loadSettings() {
+      try {
+        const { data, error } = await supabase.from('site_settings').select('*')
+        const loaded = {}
+        if (!error && data && data.length > 0) {
+          data.forEach(item => {
+            let val = item.value
+            if (!isNaN(val) && typeof val === 'string' && val.trim() !== '') val = parseFloat(val)
+            if (item.key === 'free_shipping_threshold') loaded['shipping_threshold'] = parseFloat(val) || 0
+            else if (item.key === 'shipping_charge') loaded['shipping_flat_rate'] = parseFloat(val) || 0
+          })
+        }
+        const local = localStorage.getItem('admin_settings')
+        const localParsed = local ? JSON.parse(local) : {}
+        setSettings(prev => ({ ...prev, ...localParsed, ...loaded }))
+      } catch {
+        const local = localStorage.getItem('admin_settings')
+        if (local) setSettings(JSON.parse(local))
+      }
+    }
+    loadSettings()
+  }, [])
+
+  const shipping = cartTotal >= settings.shipping_threshold ? 0 : settings.shipping_flat_rate
   const total = cartTotal + shipping
 
   return (
@@ -177,7 +209,7 @@ export default function Cart() {
                 {shipping > 0 && (
                   <div className="p-3.5 bg-gold/5 border border-gold/25 rounded-2xl text-[10px] sm:text-xs text-gold font-bold leading-normal uppercase text-center flex items-center justify-center gap-1.5">
                     <Truck className="w-4 h-4 text-gold shrink-0 animate-bounce" />
-                    <span>Add ₹{499 - cartTotal} more for FREE shipping</span>
+                    <span>Add ₹{settings.shipping_threshold - cartTotal} more for FREE shipping</span>
                   </div>
                 )}
               </div>

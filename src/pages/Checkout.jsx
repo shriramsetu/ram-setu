@@ -151,6 +151,10 @@ export default function Checkout() {
   // Place Cash on Delivery order
   async function handleCOD(e) {
     e.preventDefault()
+    if (!user) {
+      toast.error('Please log in to your account to place an order.')
+      return
+    }
     if (!settings.enable_cod) {
       toast.error('COD option is currently unavailable')
       return
@@ -168,6 +172,8 @@ export default function Checkout() {
     try {
       const order = await createOrder({
         user_id: user?.id || null,
+        email: form.email,
+        full_name: form.full_name,
         total_amount: total,
         shipping_amount: shipping,
         discount_amount: discount,
@@ -198,6 +204,10 @@ export default function Checkout() {
   // Place Razorpay order
   async function handleRazorpay(e) {
     e.preventDefault()
+    if (!user) {
+      toast.error('Please log in to your account to place an order.')
+      return
+    }
     if (!settings.enable_razorpay) {
       toast.error('Online Payment option is currently unavailable')
       return
@@ -224,10 +234,14 @@ export default function Checkout() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ amount: Math.round(total * 100) }),
       })
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}))
+        throw new Error(errData.error || 'Server error initiating order')
+      }
       const { orderId, key } = await res.json()
 
       const options = {
-        key: key || settings.razorpay_key_id,
+        key: key,
         amount: Math.round(total * 100),
         currency: 'INR',
         name: 'RamSetu Divine Stones',
@@ -239,6 +253,8 @@ export default function Checkout() {
           try {
             const order = await createOrder({
               user_id: user?.id || null,
+              email: form.email,
+              full_name: form.full_name,
               total_amount: total,
               shipping_amount: shipping,
               discount_amount: discount,
@@ -270,7 +286,7 @@ export default function Checkout() {
       const rzp = new window.Razorpay(options)
       rzp.open()
     } catch (err) {
-      toast.error('Payment initiation failed. Please try again.')
+      toast.error(`Payment initiation failed: ${err.message || 'Please try again.'}`)
       setLoading(false)
       setIsProcessingOnline(false)
     } finally {
@@ -533,31 +549,50 @@ export default function Checkout() {
 
               {/* Payment Buttons Card */}
               <div className="flex flex-col gap-3">
-                {settings.enable_razorpay && (
-                  <button
-                    onClick={handleRazorpay}
-                    disabled={loading}
-                    className="group w-full h-12 bg-gold hover:bg-dark text-dark hover:text-gold border border-gold/30 rounded-xl font-bold text-xs uppercase tracking-widest shadow-[0_8px_24px_-8px_rgba(200,134,10,0.3)] hover:shadow-[0_10px_32px_-6px_rgba(200,134,10,0.4)] hover:scale-[1.01] active:scale-[0.99] transition-all duration-300 cursor-pointer flex items-center justify-center gap-2 mt-1 font-sans disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <CreditCard className="w-4 h-4" /> {isProcessingOnline ? 'Processing…' : `Pay Online — ₹${Math.round(total)}`}
-                  </button>
-                )}
-
-                {settings.enable_cod && (
-                  <button
-                    onClick={handleCOD}
-                    disabled={loading}
-                    className="w-full h-11 border-2 border-dark text-dark hover:bg-dark hover:text-white rounded-xl font-bold text-xs uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer mt-1 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <ShoppingBag className="w-4 h-4" /> {isProcessingCod ? 'Processing…' : 'Cash on Delivery (COD)'}
-                  </button>
-                )}
-
-                {!settings.enable_razorpay && !settings.enable_cod && (
-                  <div className="flex gap-3 items-start bg-amber-50 border border-amber-200 text-amber-800 p-4 rounded-2xl text-xs leading-relaxed font-sans">
-                    <ShieldAlert className="w-5 h-5 shrink-0 text-amber-600" />
-                    <span>We are currently updating our payment gateways. Please contact support to complete your checkout.</span>
+                {!user ? (
+                  <div className="flex flex-col items-center gap-3 bg-red-50 border border-red-200/60 p-5 rounded-2xl text-center font-sans">
+                    <ShieldAlert className="w-6 h-6 text-red-600 mb-1" />
+                    <p className="text-xs font-bold text-red-950">Login Required to Checkout</p>
+                    <p className="text-[11px] text-red-700/80 leading-normal max-w-xs">
+                      You must be signed in to your account to make a payment and place an order.
+                    </p>
+                    <Link
+                      to="/login"
+                      state={{ from: '/checkout' }}
+                      className="mt-2 inline-flex items-center justify-center px-6 py-2.5 bg-red-600 hover:bg-red-700 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all duration-300 shadow-md shadow-red-600/10 focus-visible:outline-none"
+                    >
+                      Login / Sign Up
+                    </Link>
                   </div>
+                ) : (
+                  <>
+                    {settings.enable_razorpay && (
+                      <button
+                        onClick={handleRazorpay}
+                        disabled={loading}
+                        className="group w-full h-12 bg-gold hover:bg-dark text-dark hover:text-gold border border-gold/30 rounded-xl font-bold text-xs uppercase tracking-widest shadow-[0_8px_24px_-8px_rgba(200,134,10,0.3)] hover:shadow-[0_10px_32px_-6px_rgba(200,134,10,0.4)] hover:scale-[1.01] active:scale-[0.99] transition-all duration-300 cursor-pointer flex items-center justify-center gap-2 mt-1 font-sans disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <CreditCard className="w-4 h-4" /> {isProcessingOnline ? 'Processing…' : `Pay Online (includes ₹${Math.round(shipping)} shipping) — ₹${Math.round(total)}`}
+                      </button>
+                    )}
+
+                    {settings.enable_cod && (
+                      <button
+                        onClick={handleCOD}
+                        disabled={loading}
+                        className="w-full h-11 border-2 border-dark text-dark hover:bg-dark hover:text-white rounded-xl font-bold text-xs uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer mt-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <ShoppingBag className="w-4 h-4" /> {isProcessingCod ? 'Processing…' : 'Cash on Delivery (COD)'}
+                      </button>
+                    )}
+
+                    {!settings.enable_razorpay && !settings.enable_cod && (
+                      <div className="flex gap-3 items-start bg-amber-50 border border-amber-200 text-amber-800 p-4 rounded-2xl text-xs leading-relaxed font-sans">
+                        <ShieldAlert className="w-5 h-5 shrink-0 text-amber-600" />
+                        <span>We are currently updating our payment gateways. Please contact support to complete your checkout.</span>
+                      </div>
+                    )}
+                  </>
                 )}
 
                 <div className="text-center text-[10px] text-gray-400 tracking-wider uppercase py-2 flex items-center justify-center gap-1.5 font-semibold">

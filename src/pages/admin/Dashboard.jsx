@@ -598,8 +598,6 @@ export default function Dashboard() {
         { key: 'shipping_charge', value: String(settings.shipping_flat_rate) },
         { key: 'razorpay_enabled', value: String(settings.enable_razorpay) },
         { key: 'cod_enabled', value: String(settings.enable_cod) },
-        { key: 'razorpay_key_id', value: String(settings.razorpay_key_id) },
-        { key: 'razorpay_key_secret', value: String(settings.razorpay_key_secret) },
       ]
 
       const { error } = await supabase
@@ -1539,35 +1537,7 @@ export default function Dashboard() {
                         </div>
                       </div>
 
-                      {/* Razorpay specific inputs */}
-                      <div className="space-y-4 bg-slate-50/50 border border-gold/10 p-6 rounded-2xl">
-                        <h3 className="text-xs font-extrabold uppercase tracking-widest text-gold flex items-center gap-2 pb-2 border-b border-gold/10">
-                          <SettingsIcon className="w-4.5 h-4.5" />
-                          <span>Razorpay API Settings</span>
-                        </h3>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-                          <div className="space-y-1">
-                            <label className="text-[9px] font-bold uppercase tracking-wider text-slate-500 block mb-1">Razorpay Key ID</label>
-                            <input
-                              type="text"
-                              placeholder="rzp_live_..."
-                              value={settings.razorpay_key_id}
-                              onChange={e => setSettings(s => ({ ...s, razorpay_key_id: e.target.value }))}
-                              className="w-full px-3.5 py-2.5 bg-white border border-gold/15 focus:border-gold rounded-xl text-slate-800 text-sm focus:outline-none font-mono transition-all"
-                            />
-                          </div>
-                          <div className="space-y-1">
-                            <label className="text-[9px] font-bold uppercase tracking-wider text-slate-500 block mb-1">Razorpay Key Secret</label>
-                            <input
-                              type="password"
-                              placeholder="••••••••••••••••"
-                              value={settings.razorpay_key_secret}
-                              onChange={e => setSettings(s => ({ ...s, razorpay_key_secret: e.target.value }))}
-                              className="w-full px-3.5 py-2.5 bg-white border border-gold/15 focus:border-gold rounded-xl text-slate-800 text-sm focus:outline-none font-mono transition-all"
-                            />
-                          </div>
-                        </div>
-                      </div>
+                      {/* Razorpay specific inputs removed for environment security */}
 
 
                       <button type="submit" className="w-full sm:w-auto px-8 py-4 rounded-xl bg-gold hover:bg-dark text-white font-bold text-xs uppercase tracking-wider shadow-[0_8px_20px_-6px_rgba(200,134,10,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 cursor-pointer">
