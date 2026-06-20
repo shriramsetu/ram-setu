@@ -5,7 +5,7 @@ import toast from 'react-hot-toast'
 import { getFeaturedProducts, primaryImage } from '../lib/supabase'
 import { useCart } from '../context/CartContext'
 import ScrollReveal from '../components/ScrollReveal'
-import { Award, Waves, PenTool, Truck, Sparkles, Navigation, ShieldCheck, RefreshCw, ShoppingCart, HelpCircle, Star, ChevronUp, ChevronDown } from 'lucide-react'
+import { Award, Waves, PenTool, Truck, Sparkles, Navigation, ShieldCheck, RefreshCw, ShoppingCart, HelpCircle, Star, ChevronUp, ChevronDown, ArrowRight } from 'lucide-react'
 import { FaWhatsapp } from 'react-icons/fa'
 
 // SVG Icons
@@ -109,7 +109,7 @@ export default function Home() {
   const [activeImg, setActiveImg] = useState(0)
   const [qty, setQty] = useState(1)
   const thumbRef = useRef(null)
-  
+
   const touchStartX = useRef(0)
   const touchStartY = useRef(0)
   const touchEndX = useRef(0)
@@ -315,15 +315,15 @@ export default function Home() {
               };
 
               return (
-                <div className="bg-gradient-to-br from-white to-[#FFFDF9]/90 rounded-3xl border border-gold/20 p-6 md:p-10 shadow-xl hover:shadow-2xl hover:shadow-gold/10 transition-all duration-500 max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-12 items-start relative overflow-hidden">
+                <div className="bg-gradient-to-br from-white to-[#FFFDF9]/90 rounded-3xl md:rounded-[2.5rem] border border-gold/15 p-6 md:p-10 shadow-xl hover:shadow-2xl hover:shadow-gold/10 transition-all duration-500 max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-12 items-start relative overflow-hidden">
                   {/* Decorative golden corner accents */}
                   <div className="absolute top-0 left-0 w-8 h-8 border-t-2 border-l-2 border-gold/30 rounded-tl-2xl pointer-events-none" />
                   <div className="absolute bottom-0 right-0 w-8 h-8 border-b-2 border-r-2 border-gold/30 rounded-br-2xl pointer-events-none" />
                   {/* Left: Images */}
                   <div className="w-full md:col-span-7">
-                    <div className="flex flex-col-reverse sm:flex-row-reverse gap-4 sm:gap-8 items-center">
-                      <div 
-                        className="flex-1 rounded-2xl overflow-hidden aspect-square bg-[#FAF6EE] border-2 border-gold/25 shadow-lg relative group/img cursor-grab active:cursor-grabbing"
+                    <div className="flex flex-col sm:flex-row-reverse gap-4 sm:gap-8 items-center">
+                      <div
+                        className="flex-1 rounded-2xl md:rounded-[2rem] overflow-hidden aspect-square bg-[#FAF4E8] border-2 border-gold/20 shadow-sm relative group/img cursor-grab active:cursor-grabbing"
                         onTouchStart={handleTouchStart}
                         onTouchMove={handleTouchMove}
                         onTouchEnd={() => handleSwipe(displayImages.length)}
@@ -331,34 +331,32 @@ export default function Home() {
                         <img
                           src={displayImages[activeImg]?.url || primaryImage(product)}
                           alt={product.name}
-                          className="w-full h-full object-contain transition-transform duration-700 group-hover/img:scale-105 pointer-events-none"
+                          className="w-full h-full object-cover sm:object-contain p-0 sm:p-4 transition-transform duration-750 group-hover/img:scale-105 pointer-events-none"
                         />
                       </div>
                       {displayImages.length > 1 && (
-                        <div className="flex flex-row sm:flex-col items-center gap-3 shrink-0 w-full sm:w-auto justify-center px-1 sm:px-2">
+                        <div className="flex flex-row sm:flex-col items-center gap-3 shrink-0 w-full sm:w-auto justify-start sm:justify-center px-1 sm:px-2 overflow-x-auto no-scrollbar">
                           {displayImages.length > 4 && (
                             <button
                               type="button"
                               onClick={() => scrollThumbnails('up')}
-                              className="text-gold p-1 hover:scale-125 transition-transform duration-200 cursor-pointer"
+                              className="text-gold p-1 hover:scale-125 transition-transform duration-200 cursor-pointer hidden sm:block"
                             >
-                              <ChevronUp className="w-5 h-5 hidden sm:block" />
-                              <span className="block sm:hidden text-gold font-bold text-lg leading-none">◀</span>
+                              <ChevronUp className="w-5 h-5" />
                             </button>
                           )}
                           <div
                             ref={thumbRef}
-                            className="flex sm:flex-col gap-3 max-h-[350px] overflow-y-auto pr-1.5 scrollbar-none shrink-0 overflow-x-auto w-full sm:w-auto scroll-smooth py-2 px-2"
+                            className="flex flex-row sm:flex-col gap-3 sm:h-[400px] sm:max-h-[400px] overflow-y-auto sm:overflow-y-auto overflow-x-auto sm:overflow-x-hidden pr-1.5 scrollbar-none shrink-0 w-full sm:w-auto scroll-smooth py-2 px-2"
                           >
                             {displayImages.map((img, i) => (
                               <button
                                 key={i}
                                 onClick={() => setActiveImg(i)}
-                                className={`w-14 h-14 rounded-2xl overflow-hidden border-2 cursor-pointer transition-all duration-300 shrink-0 ${
-                                  i === activeImg 
-                                    ? 'border-gold shadow-[0_0_12px_rgba(212,165,55,0.4)] bg-white scale-105 opacity-100' 
-                                    : 'border-gold/10 opacity-60 hover:opacity-100 hover:border-gold/35 bg-white/50 scale-100'
-                                }`}
+                                className={`w-14 h-14 rounded-2xl overflow-hidden border-2 cursor-pointer transition-all duration-300 shrink-0 ${i === activeImg
+                                  ? 'border-gold shadow-[0_0_12px_rgba(212,165,55,0.4)] bg-[#FAF4E8] scale-105 opacity-100'
+                                  : 'border-gold/10 opacity-60 hover:opacity-100 hover:border-gold/35 bg-[#FAF4E8]/50 scale-100'
+                                  }`}
                               >
                                 <img src={img.url} alt="" className="w-full h-full object-cover" />
                               </button>
@@ -368,10 +366,9 @@ export default function Home() {
                             <button
                               type="button"
                               onClick={() => scrollThumbnails('down')}
-                              className="text-gold p-1 hover:scale-125 transition-transform duration-200 cursor-pointer"
+                              className="text-gold p-1 hover:scale-125 transition-transform duration-200 cursor-pointer hidden sm:block"
                             >
-                              <ChevronDown className="w-5 h-5 hidden sm:block" />
-                              <span className="block sm:hidden text-gold font-bold text-lg leading-none">▶</span>
+                              <ChevronDown className="w-5 h-5" />
                             </button>
                           )}
                         </div>
@@ -379,22 +376,14 @@ export default function Home() {
                     </div>
                   </div>
                   {/* Right: Product details */}
-                  <div className="flex flex-col h-full justify-between md:col-span-5">
+                  <div className="flex flex-col justify-between md:col-span-5 text-left h-auto md:h-full">
                     <div>
-                      <h3 className="font-sans font-black text-dark text-2xl md:text-4xl leading-snug mb-3 tracking-tight bg-gradient-to-r from-dark via-[#4A2500] to-gold bg-clip-text text-transparent">
+                      <h3 className="font-sans font-extrabold text-dark text-2xl md:text-3.5xl leading-tight mb-3 tracking-tight bg-gradient-to-r from-dark via-[#4A2500] to-gold bg-clip-text text-transparent">
                         {product.name}
                       </h3>
 
-                      <div className="flex flex-wrap items-center gap-2 mb-4 bg-gold/5 border border-gold/10 px-3 py-1.5 rounded-full w-fit">
-                        <div className="flex gap-0.5 text-gold">
-                          {[...Array(5)].map((_, i) => (
-                            <Star key={i} className="w-3.5 h-3.5 fill-current" />
-                          ))}
-                        </div>
-                        <span className="text-gold font-bold text-[10px] sm:text-xs">(128 Consecrated Buyer Reviews)</span>
-                      </div>
 
-                      <div className="flex items-center gap-3.5 mb-5 bg-[#FFFDF9]/80 border border-gold/10 px-4 py-2.5 rounded-2xl w-fit shadow-sm">
+                      <div className="flex items-center gap-3.5 mb-5 bg-[#FFFDF9]/85 border border-gold/10 px-4 py-2.5 rounded-2xl w-fit shadow-sm">
                         <span className="font-sans font-black text-dark text-3xl">₹{Math.round(product.price)}</span>
                         {product.compare_price && (
                           <del className="text-gray-400 text-sm font-semibold">₹{Math.round(product.compare_price)}</del>
@@ -406,23 +395,23 @@ export default function Home() {
                         )}
                       </div>
 
-                      <p className="text-gray-600 font-sans text-sm md:text-base leading-relaxed mb-6 font-medium">
+                      <p className="text-gray-600 font-sans text-sm leading-relaxed mb-6 font-medium border-l-2 border-gold/20 pl-3">
                         {product.description || 'Bring home a piece of Ramayana history. Consecrated on the shores of Rameswaram, this sacred stone floats naturally on water and spreads positive energy throughout your space.'}
                       </p>
 
                       {/* Benefits & Trust Badges */}
                       <div className="flex flex-wrap gap-2 mb-6">
-                        <span className="inline-flex items-center gap-1.5 bg-gold/5 border border-gold/15 rounded-full px-3 py-1.5 text-xs font-bold text-dark hover:bg-gold/10 hover:border-gold/35 transition-colors duration-300">
+                        <span className="inline-flex items-center gap-1.5 bg-gradient-to-b from-white to-[#FAF6EE] border border-gold/15 rounded-xl px-3 py-1.5 text-xs font-bold text-dark shadow-sm">
                           <Award className="w-3.5 h-3.5 text-gold" /> 100% Authentic
                         </span>
-                        <span className="inline-flex items-center gap-1.5 bg-gold/5 border border-gold/15 rounded-full px-3 py-1.5 text-xs font-bold text-dark hover:bg-gold/10 hover:border-gold/35 transition-colors duration-300">
+                        <span className="inline-flex items-center gap-1.5 bg-gradient-to-b from-white to-[#FAF6EE] border border-gold/15 rounded-xl px-3 py-1.5 text-xs font-bold text-dark shadow-sm">
                           <Waves className="w-3.5 h-3.5 text-gold" /> Floats on Water
                         </span>
-                        <span className="inline-flex items-center gap-1.5 bg-gold/5 border border-gold/15 rounded-full px-3 py-1.5 text-xs font-bold text-dark hover:bg-gold/10 hover:border-gold/35 transition-colors duration-300">
+                        <span className="inline-flex items-center gap-1.5 bg-gradient-to-b from-white to-[#FAF6EE] border border-gold/15 rounded-xl px-3 py-1.5 text-xs font-bold text-dark shadow-sm">
                           <PenTool className="w-3.5 h-3.5 text-gold" /> Free Engraving
                         </span>
-                        <span className="inline-flex items-center gap-1.5 bg-gold/5 border border-gold/15 rounded-full px-3 py-1.5 text-xs font-bold text-dark hover:bg-gold/10 hover:border-gold/35 transition-colors duration-300">
-                          <Truck className="w-3.5 h-3.5 text-gold" /> Pan India Free Shipping
+                        <span className="inline-flex items-center gap-1.5 bg-gradient-to-b from-white to-[#FAF6EE] border border-gold/15 rounded-xl px-3 py-1.5 text-xs font-bold text-dark shadow-sm">
+                          <Truck className="w-3.5 h-3.5 text-gold" /> Free Shipping
                         </span>
                       </div>
                     </div>
@@ -434,53 +423,54 @@ export default function Home() {
                           Currently Consecrating Next Batch (Out of Stock)
                         </div>
                       ) : (
-                        <div className="flex flex-col gap-3">
-                          <div className="flex gap-4 items-center">
-                            <div className="flex items-center border-2 border-gold/20 rounded-full overflow-hidden bg-white/80 backdrop-blur-sm shadow-inner shrink-0 hover:border-gold/45 transition-colors duration-300">
+                        <div className="bg-white/50 backdrop-blur-sm border border-gold/10 p-5 rounded-[2rem] shadow-inner space-y-4">
+                          <div className="flex gap-2 sm:gap-3.5 items-center">
+                            {/* Quantity selector */}
+                            <div className="flex items-center border border-gold/25 rounded-full overflow-hidden bg-white shadow-sm shrink-0 h-12">
                               <button
+                                type="button"
                                 onClick={() => setQty(q => Math.max(1, q - 1))}
-                                className="px-4 py-2 text-dark font-black hover:bg-gold/10 bg-transparent border-none cursor-pointer text-lg transition-colors"
+                                className="px-3 sm:px-4 text-dark font-black hover:bg-gold/10 bg-transparent border-none cursor-pointer h-full transition-colors text-lg"
                               >
                                 −
                               </button>
-                              <span className="px-3 font-sans font-black text-sm text-dark min-w-[20px] text-center">{qty}</span>
+                              <span className="px-1.5 sm:px-3 font-extrabold text-sm text-dark min-w-[20px] sm:min-w-[24px] text-center select-none">{qty}</span>
                               <button
+                                type="button"
                                 onClick={() => setQty(q => q + 1)}
-                                className="px-4 py-2 text-dark font-black hover:bg-gold/10 bg-transparent border-none cursor-pointer text-lg transition-colors"
+                                className="px-3 sm:px-4 text-dark font-black hover:bg-gold/10 bg-transparent border-none cursor-pointer h-full transition-colors text-lg"
                               >
                                 +
                               </button>
                             </div>
 
+                            {/* Add to Cart */}
                             <button
+                              type="button"
                               onClick={() => {
                                 for (let i = 0; i < qty; i++) {
                                   addToCart({ id: product.id, name: product.name, price: product.price, image: primaryImage(product), slug: product.slug });
                                 }
-                                toast.success('Added to Cart!');
+                                toast.success('Divine stone added to your cart!');
                               }}
-                              className="flex-1 h-12 rounded-full border-2 border-dark text-dark hover:bg-dark hover:text-white font-bold text-xs tracking-wider bg-transparent transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer uppercase"
+                              className="flex-1 h-12 rounded-full border-2 border-dark text-dark hover:bg-dark hover:text-white font-extrabold text-[10px] sm:text-xs tracking-wider sm:tracking-widest bg-transparent transition-all duration-300 flex items-center justify-center gap-1.5 sm:gap-2 cursor-pointer uppercase shadow-sm"
                             >
-                              <ShoppingCart className="w-3.5 h-3.5" /> Add to Cart
+                              <ShoppingCart className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> Add to Cart
                             </button>
                           </div>
 
+                          {/* Buy Now */}
                           <button
+                            type="button"
                             onClick={handleBuyNow}
-                            className="w-full py-4 rounded-full bg-gradient-to-r from-gold to-gold-light hover:from-gold-light hover:to-gold text-dark font-black text-xs uppercase tracking-wider shadow-lg hover:shadow-gold/30 hover:-translate-y-0.5 transition-all duration-300 cursor-pointer flex items-center justify-center gap-2 border-none"
+                            className="w-full py-3 rounded-full bg-gradient-to-r from-gold via-gold-light to-gold hover:scale-[1.01] active:scale-99 text-dark font-black text-xs uppercase tracking-widest shadow-md hover:shadow-gold/25 transition-all duration-300 cursor-pointer flex items-center justify-center gap-2 border-none h-12"
                           >
-                            <Sparkles className="w-3.5 h-3.5" /> Buy Now (Instant Checkout)
+                            <Sparkles className="w-4.5 h-4.5" /> Buy Now
+                            <ArrowRight className="w-4.5 h-4.5" />
                           </button>
                         </div>
                       )}
 
-                      {/* Payment/Shipping reassurance */}
-                      <div className="border-t border-gold/15 pt-5 mt-6 grid grid-cols-2 gap-4 text-left text-[11px] text-gray-500 font-sans leading-normal font-semibold">
-                        <div className="flex items-center gap-2 hover:text-gold transition-colors duration-300"><Navigation className="w-4 h-4 text-gold" /> Consecrated in Rameswaram</div>
-                        <div className="flex items-center gap-2 hover:text-gold transition-colors duration-300"><Truck className="w-4 h-4 text-gold" /> Fast Pan-India Delivery</div>
-                        <div className="flex items-center gap-2 hover:text-gold transition-colors duration-300"><ShieldCheck className="w-4 h-4 text-gold" /> Secure Online Pay &amp; COD</div>
-                        <div className="flex items-center gap-2 hover:text-gold transition-colors duration-300"><RefreshCw className="w-4 h-4 text-gold" /> 7-Day Float Guarantee</div>
-                      </div>
                     </div>
                   </div>
                 </div>
@@ -498,7 +488,7 @@ export default function Home() {
 
         {/* Section Header */}
         <div className="relative z-10 text-center pt-20 pb-14 px-4 md:px-8 max-w-7xl mx-auto">
-          <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gold/15 border border-gold/30 text-gold text-xs font-semibold tracking-widest uppercase mb-5">
+          <span className="text-gold text-xs font-black tracking-[0.25em] uppercase block mb-3 font-sans">
             ✦ Real. Verified. Divine.
           </span>
           <h2 className="font-sans text-3xl md:text-5xl font-extrabold text-dark tracking-tight">
@@ -507,7 +497,7 @@ export default function Home() {
           <p className="mt-3 text-gray-500 font-sans max-w-lg mx-auto text-sm md:text-base">
             Watch the miracle with your own eyes — sacred Ram Setu stones floating on water, just as described in the Ramayana
           </p>
-          <div className="w-16 h-1 bg-gradient-to-r from-gold to-gold-light mx-auto mt-5 rounded-full" />
+          <div className="w-16 h-1 bg-gradient-to-r from-gold to-gold-light mx-auto mt-4 rounded-full" />
         </div>
 
         {/* Video + Testimonials Grid */}
@@ -571,10 +561,10 @@ export default function Home() {
               ))}
             </div>
 
-            <Link to="/gallery" className="inline-flex items-center gap-2 mt-5 text-gold hover:text-gold-light font-bold text-sm transition-colors group/link">
+            <Link to="/gallery" className="inline-flex items-center justify-center gap-2.5 px-8 py-3.5 rounded-full bg-gradient-to-r from-gold to-gold-light hover:from-gold-light hover:to-gold text-dark font-black text-xs uppercase tracking-wider shadow-lg hover:shadow-gold/30 hover:-translate-y-0.5 transition-all duration-300 border-none cursor-pointer mt-5 group">
               View Full Gallery
-              <svg className="w-4 h-4 group-hover/link:translate-x-1 transition-transform" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+              <svg className="w-4 h-4 transform group-hover:translate-x-1 transition-transform duration-300 text-dark" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
               </svg>
             </Link>
           </div>
@@ -696,7 +686,7 @@ export default function Home() {
         </div>
       </section>
 
-     
+
 
 
 
@@ -811,7 +801,7 @@ export default function Home() {
               { src: '/images/gallery/gallery-3.jpeg', alt: 'Stone Collection', caption: 'Stone Collection', sub: 'Hand-picked with devotion' },
               { src: '/images/gallery/gallery-4.jpeg', alt: 'Divine Stone', caption: 'Divine Proof of Legend', sub: 'The miracle that amazed the world' },
             ].map((img, i) => (
-              <div key={i} className="relative aspect-square overflow-hidden rounded-[2rem] group cursor-pointer border-2 border-gold/15 hover:border-gold hover:shadow-[0_20px_50px_rgba(212,165,55,0.2)] transition-all duration-500 bg-[#FAF6EE]">
+              <div key={i} className="relative aspect-[2/3] overflow-hidden rounded-[2rem] group cursor-pointer border-2 border-gold/15 hover:border-gold hover:shadow-[0_20px_50px_rgba(212,165,55,0.2)] transition-all duration-500 bg-[#FAF6EE]">
                 <div className="absolute inset-0 w-full h-full -translate-x-full group-hover:translate-x-full bg-gradient-to-r from-transparent via-white/10 to-transparent transition-transform duration-1000 ease-out z-20 pointer-events-none" />
                 <img src={img.src} alt={img.alt} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
                 <div className="absolute inset-0 bg-gradient-to-t from-dark/95 via-dark/20 to-transparent flex flex-col justify-end p-4 sm:p-5 z-10">
@@ -827,10 +817,10 @@ export default function Home() {
           <div className="text-center mt-14">
             <Link
               to="/gallery"
-              className="group inline-flex items-center gap-2.5 px-10 py-4 rounded-full border-2 border-gold text-gold hover:bg-gold hover:text-dark font-black tracking-widest transition-all duration-300 text-xs uppercase"
+              className="group inline-flex items-center justify-center gap-2.5 px-10 py-4 rounded-full bg-gradient-to-r from-gold to-gold-light hover:from-gold-light hover:to-gold text-dark font-black text-xs uppercase tracking-widest shadow-lg hover:shadow-gold/30 hover:-translate-y-0.5 transition-all duration-300 border-none cursor-pointer"
             >
               See Full Gallery
-              <svg className="w-4 h-4 transform group-hover:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+              <svg className="w-4 h-4 transform group-hover:translate-x-1 transition-transform duration-300 text-dark" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
               </svg>
             </Link>
@@ -876,7 +866,7 @@ export default function Home() {
                   <div className="absolute top-3 inset-x-3 flex justify-between items-center z-20 pointer-events-none">
                     <span className={`px-2.5 py-1 rounded-full ${v.badge} text-[8px] font-black uppercase tracking-widest shadow-md backdrop-blur-sm`}>{v.label}</span>
                     <div className="w-7 h-7 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center text-white border border-white/10">
-                      <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1112.63 8 4 4 0 0116 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+                      <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="2" width="20" height="20" rx="5" ry="5" /><path d="M16 11.37A4 4 0 1112.63 8 4 4 0 0116 11.37z" /><line x1="17.5" y1="6.5" x2="17.51" y2="6.5" /></svg>
                     </div>
                   </div>
                   <div className="absolute inset-x-3 bottom-3 z-20">
@@ -892,15 +882,15 @@ export default function Home() {
             <div className="flex flex-wrap gap-3 justify-center">
               <a href="https://www.instagram.com/ramsetustones/" target="_blank" rel="noopener noreferrer"
                 className="flex items-center gap-2.5 px-6 py-3 rounded-full bg-gradient-to-r from-[#f09433] via-[#dc2743] to-[#bc1888] text-white font-black text-xs uppercase tracking-wider hover:scale-105 hover:shadow-xl transition-all duration-300 shadow-md">
-                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1112.63 8 4 4 0 0116 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="2" width="20" height="20" rx="5" ry="5" /><path d="M16 11.37A4 4 0 1112.63 8 4 4 0 0116 11.37z" /><line x1="17.5" y1="6.5" x2="17.51" y2="6.5" /></svg>
                 Instagram
               </a>
               <a href="#" className="flex items-center gap-2.5 px-6 py-3 rounded-full bg-[#FF0000] text-white font-black text-xs uppercase tracking-wider hover:scale-105 hover:shadow-xl transition-all duration-300 shadow-md">
-                <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M23.498 6.163a3.003 3.003 0 00-2.11-2.107C19.528 3.545 12 3.545 12 3.545s-7.528 0-9.388.511a3.002 3.002 0 00-2.11 2.107C0 8.021 0 12 0 12s0 3.979.502 5.837a3.003 3.003 0 002.11 2.107c1.86.511 9.388.511 9.388.511s7.528 0 9.388-.511a3.002 3.002 0 002.11-2.107C24 15.979 24 12 24 12s0-3.979-.502-5.837zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+                <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M23.498 6.163a3.003 3.003 0 00-2.11-2.107C19.528 3.545 12 3.545 12 3.545s-7.528 0-9.388.511a3.002 3.002 0 00-2.11 2.107C0 8.021 0 12 0 12s0 3.979.502 5.837a3.003 3.003 0 002.11 2.107c1.86.511 9.388.511 9.388.511s7.528 0 9.388-.511a3.002 3.002 0 002.11-2.107C24 15.979 24 12 24 12s0-3.979-.502-5.837zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" /></svg>
                 YouTube
               </a>
               <a href="#" className="flex items-center gap-2.5 px-6 py-3 rounded-full bg-[#1877F2] text-white font-black text-xs uppercase tracking-wider hover:scale-105 hover:shadow-xl transition-all duration-300 shadow-md">
-                <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+                <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" /></svg>
                 Facebook
               </a>
               <a href="https://wa.me/919876543210" className="flex items-center gap-2.5 px-6 py-3 rounded-full bg-[#25D366] text-white font-black text-xs uppercase tracking-wider hover:scale-105 hover:shadow-xl transition-all duration-300 shadow-md">
@@ -985,7 +975,7 @@ export default function Home() {
         </div>
       </ScrollReveal>
 
-      
+
 
       <ScrollReveal className="relative bg-gradient-to-r from-[#3D140E] via-[#6E1C12] to-[#1C0907] py-12 border-t border-b border-gold/20 overflow-hidden">
         {/* Dotted overlay */}

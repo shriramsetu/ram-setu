@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { Phone, Mail, MessageCircle, MapPin, Clock, Send, ArrowRight } from 'lucide-react'
 import { FaWhatsapp } from 'react-icons/fa'
+import { supabase } from '../lib/supabase'
 
 export default function Contact() {
   const [form, setForm] = useState({ name: '', email: '', phone: '', subject: '', message: '' })
@@ -16,10 +17,17 @@ export default function Contact() {
   async function handleSubmit(e) {
     e.preventDefault()
     setLoading(true)
-    await new Promise(r => setTimeout(r, 800))
-    toast.success("Message sent! We'll respond within 24 hours. 🙏")
-    setForm({ name: '', email: '', phone: '', subject: '', message: '' })
-    setLoading(false)
+    try {
+      const { error } = await supabase.from('contacts').insert([form])
+      if (error) throw error
+      toast.success("Message sent! We'll respond within 24 hours. 🙏")
+      setForm({ name: '', email: '', phone: '', subject: '', message: '' })
+    } catch (err) {
+      console.error(err)
+      toast.error('Failed to send message. Please try again.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (

@@ -177,15 +177,6 @@ export default function About() {
                   <IconArrowRight />
                 </span>
               </Link>
-              <a
-                href="https://wa.me/919876543210"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="group px-4 py-3.5 md:px-8 md:py-4 rounded-full border-2 border-dark text-dark font-black hover:bg-dark hover:text-white transition-all duration-300 text-xs md:text-sm flex items-center gap-2 md:gap-2.5 uppercase tracking-wider whitespace-nowrap shrink-0"
-              >
-                <IconWhatsApp />
-                <span>WhatsApp</span>
-              </a>
             </div>
           </div>
         </div>
@@ -243,7 +234,7 @@ export default function About() {
           <div className="relative flex flex-col lg:flex-row lg:items-stretch gap-8 lg:gap-6 mt-12">
             {/* Visual connecting dashed line for desktop */}
             <div className="absolute top-0 left-12 right-12 h-[2px] border-t border-dashed border-gold/25 hidden lg:block" aria-hidden="true" />
-            
+
             {/* Visual connecting dashed line for mobile/tablet */}
             <div className="absolute left-[45px] top-4 bottom-4 w-[2px] border-l border-dashed border-gold/25 lg:hidden" aria-hidden="true" />
 
@@ -316,11 +307,11 @@ export default function About() {
               {/* Concentric counter-rotating background mandala rings */}
               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 rounded-full border border-gold/5 border-dashed animate-[spin_60s_linear_infinite]" aria-hidden="true" />
               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-72 h-72 rounded-full border border-gold/10 border-dotted animate-[spin_40s_linear_reverse_infinite]" aria-hidden="true" />
-              
+
               {/* Corner decor arches */}
               <div className="absolute top-6 left-6 w-10 h-10 border-t-2 border-l-2 border-gold/30 group-hover:border-gold/60 rounded-tl-xl transition-colors duration-300" aria-hidden="true" />
               <div className="absolute bottom-6 right-6 w-10 h-10 border-b-2 border-r-2 border-gold/30 group-hover:border-gold/60 rounded-br-xl transition-colors duration-300" aria-hidden="true" />
-              
+
               <span className="text-gold-pale/20 font-sans text-8xl block mb-4 select-none group-hover:scale-105 group-hover:text-gold-light/35 transition-all duration-500 leading-none" aria-hidden="true">“</span>
               <blockquote className="font-sans text-xl md:text-2xl font-bold text-white leading-relaxed -mt-8 tracking-wide relative z-10 transition-all duration-500 group-hover:text-white/95">
                 These are not mere stones.<br />
@@ -330,7 +321,7 @@ export default function About() {
                 <div className="w-12 h-12 rounded-full bg-gold/15 border-2 border-gold/35 flex items-center justify-center shadow-lg relative group-hover:scale-105 group-hover:border-gold/60 transition-all duration-300">
                   {/* Pulsing visual halo */}
                   <div className="absolute -inset-1 rounded-full border border-gold/30 animate-ping opacity-75 pointer-events-none" />
-                  
+
                   <svg className="w-5.5 h-5.5 text-gold" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M12 2s-8 6-8 10.5a8 8 0 0016 0c0-4.5-8-10.5-8-10.5zm0 13c-1.38 0-2.5-1.12-2.5-2.5S10.62 10 12 10s2.5 1.12 2.5 2.5S13.38 15 12 15z" />
                   </svg>
@@ -355,7 +346,7 @@ export default function About() {
         {/* Rotating celestial background ring */}
         <div className="absolute top-1/2 right-1/4 -translate-y-1/2 w-[600px] h-[600px] border border-gold/10 border-dashed rounded-full animate-[spin_100s_linear_infinite] pointer-events-none" />
         <div className="absolute top-1/2 left-1/4 -translate-y-1/2 w-[500px] h-[500px] bg-gold/5 rounded-full blur-3xl pointer-events-none" />
-        
+
         <div className="max-w-7xl mx-auto w-full flex flex-col lg:flex-row items-center justify-between gap-10 relative z-10 px-4 md:px-8">
           <div className="text-left max-w-2xl">
             <h3 className="font-sans font-extrabold text-gold-light text-2xl md:text-4xl mb-3 tracking-tight leading-tight">Own a Piece of Divine History</h3>

@@ -5,13 +5,42 @@ import ScrollReveal from '../components/ScrollReveal'
 import { Play, X, ChevronLeft, ChevronRight, Instagram, Youtube, Facebook, MessageSquare, ExternalLink, Video } from 'lucide-react'
 
 const images = [
-  { src: '/images/gallery/gallery-1.jpeg', alt: 'Authentic Ram Setu Stones', caption: 'Authentic Ram Setu Stones', sub: 'Directly collected from the sacred shores' },
-  { src: '/images/gallery/gallery-2.jpeg', alt: 'Sacred Floating Stone', caption: 'Sacred Floating Stones', sub: 'Each stone floats naturally on water' },
-  { src: '/images/gallery/gallery-3.jpeg', alt: 'Stone Collection', caption: 'Stone Collection', sub: 'Hand-picked with devotion' },
-  { src: '/images/gallery/gallery-4.jpeg', alt: 'Divine Stone', caption: 'Divine Proof of Legend', sub: 'The miracle that amazed the world' },
-  { src: '/images/gallery/gallery-5.jpeg', alt: 'Ram Setu Heritage', caption: 'Ram Setu Heritage', sub: 'Centuries of faith in every stone' },
-  { src: '/images/gallery/gallery-6.jpeg', alt: 'Divine Stone Set', caption: 'Divine Stone Set', sub: 'Three sacred stones — one legacy' },
-  { src: '/images/gallery/gallery-7.jpeg', alt: "Sacred Collector's Edition", caption: "Sacred Collector's Edition", sub: 'Limited — for the devoted soul' },
+  {
+    src: '/images/gallery/gallery-1.jpeg',
+    alt: 'Sacred Ram Setu Stones',
+    caption: 'Sacred Ram Setu Stones',
+    sub: 'Floating stones displayed with devotion and prayer'
+  },
+  {
+    src: '/images/gallery/gallery-2.jpeg',
+    alt: 'Divine Floating Stones',
+    caption: 'Divine Floating Stones',
+    sub: 'Witness the sacred stones floating gracefully on water'
+  },
+  {
+    src: '/images/gallery/gallery-3.jpeg',
+    alt: 'Authentic Stone Collection',
+    caption: 'Authentic Stone Collection',
+    sub: 'A blessed collection of revered Ram Setu stones'
+  },
+  {
+    src: '/images/gallery/gallery-4.jpeg',
+    alt: 'Blessings of Hanuman',
+    caption: 'Blessings of Hanuman',
+    sub: 'A symbol of faith, strength, and devotion to Lord Ram'
+  },
+  {
+    src: '/images/gallery/gallery-5.jpeg',
+    alt: 'Spiritual Heritage',
+    caption: 'Spiritual Heritage',
+    sub: 'Preserving the divine legacy of Ram Setu for generations'
+  },
+  {
+    src: '/images/gallery/gallery-6.jpeg',
+    alt: 'Sacred Stone Offering',
+    caption: 'Sacred Stone Offering',
+    sub: 'Presented with reverence as a symbol of faith and devotion'
+  }
 ]
 
 const videos = [
@@ -25,16 +54,23 @@ function VideoCard({ src, label, desc, index }) {
   const [playing, setPlaying] = useState(false)
   const ref = useRef(null)
 
-  function play() {
+  function togglePlay() {
     if (ref.current) {
-      ref.current.controls = true
-      ref.current.play()
-      setPlaying(true)
+      if (playing) {
+        ref.current.pause()
+        setPlaying(false)
+      } else {
+        ref.current.play()
+        setPlaying(true)
+      }
     }
   }
 
   return (
-    <div className="group relative rounded-[2rem] overflow-hidden border-2 border-gold/20 bg-white shadow-xl hover:shadow-[0_25px_60px_-10px_rgba(212,165,55,0.2)] hover:-translate-y-2 hover:border-gold/50 transition-all duration-500 aspect-[16/10]">
+    <div
+      onClick={togglePlay}
+      className="group relative rounded-[2rem] overflow-hidden border-2 border-gold/20 bg-white shadow-xl hover:shadow-[0_25px_60px_-10px_rgba(212,165,55,0.2)] hover:-translate-y-2 hover:border-gold/50 transition-all duration-500 aspect-[9/16] cursor-pointer"
+    >
       {/* Shine sweep */}
       <div className="absolute inset-0 w-full h-full -translate-x-full group-hover:translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-1000 ease-out z-20 pointer-events-none" />
 
@@ -42,14 +78,14 @@ function VideoCard({ src, label, desc, index }) {
         ref={ref}
         src={src}
         playsInline
+        loop
         preload="metadata"
         className="w-full h-full object-cover group-hover:scale-105 transition-all duration-700"
       />
 
       {!playing && (
         <div
-          className="absolute inset-0 flex flex-col items-center justify-center cursor-pointer bg-gradient-to-t from-dark/70 via-dark/20 to-transparent backdrop-blur-[1px] group-hover:backdrop-blur-0 transition-all duration-300"
-          onClick={play}
+          className="absolute inset-0 flex flex-col items-center justify-center bg-dark/70 via-dark/20 to-transparent backdrop-blur-[1px] group-hover:backdrop-blur-0 transition-all duration-300"
         >
           <div className="relative mb-3">
             <div className="absolute inset-0 rounded-full bg-gold/40 animate-ping scale-125" />
@@ -150,58 +186,7 @@ export default function Gallery() {
         <Lightbox images={images} startIndex={lightboxIdx} onClose={() => setLightboxIdx(null)} />
       )}
 
-      {/* ── PAGE HERO ── */}
-      <section className="relative bg-gradient-to-br from-cream2 via-[#FBF7EE] to-[#FAF3E0] py-20 md:py-28 overflow-hidden border-b border-gold/10">
-        {/* Dotted grid */}
-        <div className="absolute inset-0 opacity-[0.04] pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #B8893A 1px, transparent 1px)', backgroundSize: '28px 28px' }} />
 
-        {/* Ambient glows */}
-        <div className="absolute -top-32 -right-32 w-96 h-96 bg-gold/10 rounded-full blur-[120px] pointer-events-none" />
-        <div className="absolute -bottom-20 -left-20 w-80 h-80 bg-gold/8 rounded-full blur-[100px] pointer-events-none" />
-
-        {/* Slow spinning rings */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] border border-dashed border-gold/6 rounded-full animate-[spin_120s_linear_infinite] pointer-events-none" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] border border-dotted border-gold/8 rounded-full animate-[spin_80s_linear_infinite_reverse] pointer-events-none" />
-
-        <div className="relative z-10 max-w-7xl mx-auto px-4 md:px-8 text-center">
-          {/* Breadcrumb */}
-          <div className="flex items-center justify-center gap-2 text-gray-400 text-xs font-sans mb-8">
-            <Link to="/" className="hover:text-gold transition-colors">Home</Link>
-            <span>/</span>
-            <span className="text-gold/80">Gallery</span>
-          </div>
-
-          <span className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-gold/10 border border-gold/25 text-gold text-[10px] font-black tracking-[0.25em] uppercase mb-6 backdrop-blur-sm">
-            <span className="w-1.5 h-1.5 bg-gold rounded-full animate-pulse" />
-            ✦ Divine Showcase ✦
-          </span>
-
-          <h1 className="font-sans text-4xl sm:text-5xl md:text-6xl font-black text-dark leading-tight tracking-tight mb-5">
-            Sacred Miracle{' '}
-            <span className="bg-gradient-to-r from-gold via-[#B8893A] to-orange-500 bg-clip-text text-transparent">Gallery</span>
-          </h1>
-
-          <p className="text-gray-500 font-sans text-sm md:text-base max-w-xl mx-auto leading-relaxed mb-8">
-            Witness the divine wonder — authentic floating stones from the shores of Rameswaram, sacred rituals, and the timeless legacy of Lord Ram's bridge.
-          </p>
-
-          <div className="w-16 h-1 bg-gradient-to-r from-gold to-gold-light mx-auto mb-10 rounded-full" />
-
-          {/* Stats */}
-          <div className="inline-flex items-center gap-6 md:gap-12 bg-white/70 border border-gold/20 backdrop-blur-md rounded-2xl px-8 py-4 shadow-sm">
-            {[
-              { val: '7+', label: 'Sacred Photos' },
-              { val: '4', label: 'Divine Videos' },
-              { val: '1000+', label: 'Verified Orders' },
-            ].map((s, i) => (
-              <div key={s.label} className={`text-center ${i > 0 ? 'border-l border-gold/15 pl-6 md:pl-12' : ''}`}>
-                <div className="font-black text-2xl md:text-3xl bg-gradient-to-r from-gold to-[#B8893A] bg-clip-text text-transparent font-sans">{s.val}</div>
-                <div className="text-gray-400 text-[9px] uppercase tracking-widest font-sans mt-0.5">{s.label}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
 
       {/* ── PHOTO GALLERY ── */}
       <section className="relative bg-cream2 py-24 overflow-hidden border-b border-gold/10">
@@ -215,7 +200,7 @@ export default function Gallery() {
           <ScrollReveal className="text-center mb-16">
             <span className="text-gold text-xs font-black tracking-[0.25em] uppercase block mb-3 font-sans">✦ Photo Exhibition</span>
             <h2 className="font-sans text-3xl md:text-5xl font-extrabold text-dark tracking-tight">
-              Consecrated <span className="bg-gradient-to-r from-gold to-[#B8893A] bg-clip-text text-transparent">Stone Gallery</span>
+              Sacred  <span className="bg-gradient-to-r from-gold to-[#B8893A] bg-clip-text text-transparent">Miracle Gallery</span>
             </h2>
             <p className="mt-3 text-gray-500 font-sans text-sm max-w-md mx-auto leading-relaxed">
               Each floating stone is hand-picked and carries centuries of faith and Lord Ram's divine energy
@@ -229,7 +214,7 @@ export default function Gallery() {
               {images.map((img, i) => (
                 <div
                   key={i}
-                  className="group relative aspect-square overflow-hidden rounded-[2rem] cursor-pointer border-2 border-gold/15 hover:border-gold hover:shadow-[0_20px_60px_-10px_rgba(212,165,55,0.25)] transition-all duration-500 bg-[#FAF6EE]"
+                  className="group relative aspect-[2/3] overflow-hidden rounded-[2rem] cursor-pointer border-2 border-gold/15 hover:border-gold hover:shadow-[0_20px_60px_-10px_rgba(212,165,55,0.25)] transition-all duration-500 bg-[#FAF6EE]"
                   onClick={() => setLightboxIdx(i)}
                 >
                   {/* Corner ornaments */}
@@ -247,9 +232,9 @@ export default function Gallery() {
 
                   {/* Dark gradient overlay with text */}
                   <div className="absolute inset-0 bg-gradient-to-t from-dark/90 via-dark/20 to-transparent flex flex-col justify-end p-6 z-10">
-                    <div className="transform translate-y-2 group-hover:translate-y-0 transition-transform duration-500">
+                    <div className="transform translate-y-0 sm:translate-y-2 sm:group-hover:translate-y-0 transition-transform duration-500">
                       <span className="text-white font-black text-sm md:text-base tracking-tight block font-sans group-hover:text-gold-light transition-colors duration-300">{img.caption}</span>
-                      <small className="text-gold-pale font-sans font-semibold text-[10px] mt-1.5 block opacity-0 group-hover:opacity-100 transition-opacity duration-500 delay-100 uppercase tracking-wider">{img.sub}</small>
+                      <small className="text-gold-pale font-sans font-semibold text-[10px] mt-1.5 block opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-500 delay-100 uppercase tracking-wider">{img.sub}</small>
                     </div>
                   </div>
 
@@ -286,7 +271,7 @@ export default function Gallery() {
           </ScrollReveal>
 
           <ScrollReveal>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {videos.map((v, i) => (
                 <VideoCard key={v.src} src={v.src} label={v.label} desc={v.desc} index={i} />
               ))}

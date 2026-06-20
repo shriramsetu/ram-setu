@@ -1,17 +1,17 @@
 import { Link } from 'react-router-dom'
-import { 
-  Facebook, 
-  Instagram, 
-  Youtube, 
-  Phone, 
-  Mail, 
-  MapPin, 
-  Clock, 
-  Package, 
-  RefreshCw, 
-  ChevronRight, 
-  CreditCard, 
-  QrCode, 
+import {
+  Facebook,
+  Instagram,
+  Youtube,
+  Phone,
+  Mail,
+  MapPin,
+  Clock,
+  Package,
+  RefreshCw,
+  ChevronRight,
+  CreditCard,
+  QrCode,
   Wallet,
   MessageCircle
 } from 'lucide-react'
@@ -34,22 +34,16 @@ export default function Footer() {
 
         <div className="max-w-7xl mx-auto px-4 md:px-8 relative z-10">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-12 lg:gap-8 mb-16">
-            
+
             {/* Col 1: Brand (Span 4) */}
             <div className="lg:col-span-4 flex flex-col gap-6 pr-0 lg:pr-8">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-gold to-gold-light rounded-2xl flex items-center justify-center shadow-lg shadow-gold/10">
-                  <IconLotus className="w-5.5 h-5.5 text-dark" />
-                </div>
-                <div>
-                  <div className="font-sans text-xl font-black text-white tracking-wide uppercase">RamSetu</div>
-                  <div className="text-[9px] text-gold font-bold tracking-[0.25em] uppercase">— Divine Stones —</div>
-                </div>
+              <div className="flex items-center">
+                <img src="/images/logo/logo.png" alt="RamSetu Logo" className="h-12 md:h-14 w-auto object-contain" />
               </div>
               <p className="text-xs md:text-sm text-cream/70 leading-relaxed max-w-sm font-sans">
                 Authentic sacred symbols of faith sourced directly from Rameswaram, hand-consecrated and guaranteed to float naturally on water. Invite divine protection and prosperity.
               </p>
-              
+
               {/* Social links */}
               <div className="flex items-center gap-3 mt-2">
                 {[
@@ -197,10 +191,10 @@ export default function Footer() {
         {/* Call Button */}
         <a 
           href="tel:+919876543210" 
-          className="relative w-[52px] h-[52px] rounded-2xl bg-gradient-to-r from-gold to-gold-light hover:from-gold-light hover:to-gold text-dark flex items-center justify-center shadow-lg hover:shadow-[0_0_20px_rgba(212,165,55,0.4)] hover:-translate-y-1 transition-all duration-300 group cursor-pointer border border-gold/25" 
+          className="relative w-9 h-9 sm:w-[52px] sm:h-[52px] rounded-xl sm:rounded-2xl bg-gradient-to-r from-gold to-gold-light hover:from-gold-light hover:to-gold text-dark flex items-center justify-center shadow-lg hover:shadow-[0_0_20px_rgba(212,165,55,0.4)] hover:-translate-y-1 transition-all duration-300 group cursor-pointer border border-gold/25" 
           title="Call Us"
         >
-          <Phone className="w-6 h-6 text-dark group-hover:scale-110 group-hover:rotate-12 transition-transform duration-300 relative z-10" />
+          <Phone className="w-4 h-4 sm:w-6 sm:h-6 text-dark group-hover:scale-110 group-hover:rotate-12 transition-transform duration-300 relative z-10" />
         </a>
 
         {/* WhatsApp Button */}
@@ -208,10 +202,10 @@ export default function Footer() {
           href="https://wa.me/919876543210" 
           target="_blank" 
           rel="noopener noreferrer" 
-          className="relative w-[52px] h-[52px] rounded-2xl bg-gradient-to-r from-[#25D366] to-[#1ebd54] text-white flex items-center justify-center shadow-lg hover:shadow-[0_0_20px_rgba(37,211,102,0.4)] hover:-translate-y-1 transition-all duration-300 group cursor-pointer border border-green-500/30" 
+          className="relative w-9 h-9 sm:w-[52px] sm:h-[52px] rounded-xl sm:rounded-2xl bg-gradient-to-r from-[#25D366] to-[#1ebd54] text-white flex items-center justify-center shadow-lg hover:shadow-[0_0_20px_rgba(37,211,102,0.4)] hover:-translate-y-1 transition-all duration-300 group cursor-pointer border border-green-500/30" 
           title="Chat on WhatsApp"
         >
-          <FaWhatsapp className="w-7 h-7 text-white group-hover:scale-115 group-hover:rotate-12 transition-transform duration-300 relative z-10" />
+          <FaWhatsapp className="w-5 h-5 sm:w-7 sm:h-7 text-white group-hover:scale-115 group-hover:rotate-12 transition-transform duration-300 relative z-10" />
         </a>
       </div>
     </>

@@ -68,251 +68,239 @@ export default function Navbar() {
   return (
     <>
       <header className={`fixed top-0 left-0 right-0 w-full transition-all duration-300 ${menuOpen ? 'z-[9999]' : 'z-50'}`}>
-      {/* Announcement Bar */}
-      <div className={`bg-[#0b0b0c] text-gold-pale px-4 md:px-8 text-center text-[10px] md:text-xs font-bold tracking-widest flex justify-between items-center flex-wrap gap-2 border-b border-gold/15 py-2 transition-all duration-300 ${isScrolled ? 'opacity-95' : ''}`}>
-        <span className="flex items-center gap-1.5 mx-auto md:mx-0 font-sans uppercase">
-          <IconLotusSmall /> Consecrated Artifacts from Rameswaram Dham
-        </span>
-        <span className="hidden md:flex items-center gap-5 font-sans uppercase">
-          <span className="flex items-center gap-1.5"><IconUsersSmall /> 1000+ Devotees</span>
-          <span className="w-1 h-1 rounded-full bg-gold/30" />
-          <span className="flex items-center gap-1.5"><IconTruckSmall /> COD Available</span>
-          <span className="w-1 h-1 rounded-full bg-gold/30" />
-          <span className="flex items-center gap-1.5"><IconMapPinSmall /> Free Pan India Delivery</span>
-        </span>
-      </div>
+        {/* Announcement Bar */}
+        <div className={`bg-[#0b0b0c] text-gold-pale px-4 md:px-8 text-center text-[10px] md:text-xs font-bold tracking-widest flex justify-between items-center flex-wrap gap-2 border-b border-gold/15 py-2 transition-all duration-300 ${isScrolled ? 'opacity-95' : ''}`}>
+          <span className="flex items-center gap-1.5 mx-auto md:mx-0 font-sans uppercase">
+            <IconLotusSmall /> Consecrated Artifacts from Rameswaram Dham
+          </span>
+          <span className="hidden md:flex items-center gap-5 font-sans uppercase">
+            <span className="flex items-center gap-1.5"><IconUsersSmall /> 1000+ Devotees</span>
+            <span className="w-1 h-1 rounded-full bg-gold/30" />
+            <span className="flex items-center gap-1.5"><IconTruckSmall /> COD Available</span>
+            <span className="w-1 h-1 rounded-full bg-gold/30" />
+            <span className="flex items-center gap-1.5"><IconMapPinSmall /> Free Pan India Delivery</span>
+          </span>
+        </div>
 
-      {/* Navigation */}
-      <nav className={`px-4 md:px-8 flex items-center justify-between transition-all duration-300 font-sans h-16 ${isScrolled ? 'bg-white/95 backdrop-blur-md border-b border-gold/20 shadow-[0_10px_35px_rgba(212,165,55,0.06)]' : 'bg-white/98 backdrop-blur-sm border-b border-gold/10 shadow-sm'}`}>
-        <Link to="/" className="flex items-center gap-3 group" onClick={closeMenu}>
-          <div className="w-10 h-10 md:w-11 md:h-11 bg-gradient-to-br from-gold to-gold-light rounded-2xl flex items-center justify-center shadow-lg shadow-gold/20 group-hover:scale-105 transition-all duration-500">
-            <IconLotus className="w-5.5 h-5.5 md:w-6 md:h-6 text-dark" />
-          </div>
-          <div className="leading-tight">
-            <div className="font-sans text-lg md:text-xl font-black text-dark tracking-wide uppercase group-hover:text-gold transition-colors duration-300">RamSetu</div>
-            <div className="text-[8px] md:text-[9px] text-gold font-bold tracking-[0.25em] uppercase mt-0.5 transition-colors duration-300">— Divine Stones —</div>
-          </div>
-        </Link>
+        {/* Navigation */}
+        <nav className={`px-4 md:px-8 flex items-center justify-between transition-all duration-300 font-sans h-16 ${isScrolled ? 'bg-white/95 backdrop-blur-md border-b border-gold/20 shadow-[0_10px_35px_rgba(212,165,55,0.06)]' : 'bg-white/98 backdrop-blur-sm border-b border-gold/10 shadow-sm'}`}>
+          <Link to="/" className="flex items-center group ml-10 md:ml-24" onClick={closeMenu}>
+            <img src="/images/logo/logo.png" alt="RamSetu Logo" className="h-12 md:h-14 w-auto object-contain group-hover:scale-[1.03] transition-all duration-500" />
+          </Link>
 
-        {/* Desktop Menu */}
-        <ul className="hidden md:flex items-center gap-8 text-xs font-black uppercase tracking-widest">
-          {[
-            { to: "/", label: "Home", end: true },
-            { to: "/about", label: "About Ram Setu" },
-            { to: "/shop", label: "Shop Stones" },
-            { to: "/gallery", label: "Gallery" },
-            { to: "/contact", label: "Contact" }
-          ].map((item) => (
-            <li key={item.to}>
-              {item.isAnchor ? (
-                <a href={item.to} className="relative py-2 text-dark hover:text-gold transition-colors duration-300 group">
-                  {item.label}
-                  <span className="absolute bottom-0 left-0 w-full h-[2px] bg-gradient-to-r from-gold to-gold-light transform scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-300" />
-                </a>
-              ) : (
-                <NavLink to={item.to} end={item.end} className={({ isActive }) => `relative py-2 transition-colors duration-300 group ${isActive ? 'text-gold' : 'text-dark hover:text-gold'}`}>
-                  {({ isActive }) => (
-                    <>
-                      {item.label}
-                      <span className={`absolute bottom-0 left-0 w-full h-[2px] bg-gradient-to-r from-gold to-gold-light transform origin-left transition-transform duration-300 ${isActive ? 'scale-x-100' : 'scale-x-0 group-hover:scale-x-100'}`} />
-                    </>
-                  )}
-                </NavLink>
-              )}
-            </li>
-          ))}
-        </ul>
-
-        {/* Right Action Buttons */}
-        <div className="hidden md:flex items-center gap-6">
-          {user ? (
-            <>
-              {isAdmin && (
-                <Link to="/admin" className="text-xs font-black uppercase tracking-wider text-gold hover:text-gold-light transition-colors duration-300">
-                  Admin Panel
-                </Link>
-              )}
-              <Link to="/my-orders" className="text-xs font-black uppercase tracking-wider text-dark hover:text-gold transition-colors duration-300">
-                My Orders
-              </Link>
-              <Link to="/cart" className="relative group p-2.5 rounded-xl hover:bg-gold/10 transition-all duration-300">
-                <div className="group-hover:scale-110 transition-transform duration-300">
-                  <IconCart />
-                </div>
-                {cartCount > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-gradient-to-r from-gold to-gold-light text-dark font-black text-[9px] w-5 h-5 rounded-full flex items-center justify-center border-2 border-white shadow-md animate-pulse">
-                    {cartCount}
-                  </span>
+          {/* Desktop Menu */}
+          <ul className="hidden md:flex items-center gap-8 text-xs font-black uppercase tracking-widest">
+            {[
+              { to: "/", label: "Home", end: true },
+              { to: "/about", label: "About Ram Setu" },
+              { to: "/shop", label: "Shop" },
+              { to: "/gallery", label: "Gallery" },
+              { to: "/contact", label: "Contact" }
+            ].map((item) => (
+              <li key={item.to}>
+                {item.isAnchor ? (
+                  <a href={item.to} className="relative py-2 text-dark hover:text-gold transition-colors duration-300 group">
+                    {item.label}
+                    <span className="absolute bottom-0 left-0 w-full h-[2px] bg-gradient-to-r from-gold to-gold-light transform scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-300" />
+                  </a>
+                ) : (
+                  <NavLink to={item.to} end={item.end} className={({ isActive }) => `relative py-2 transition-colors duration-300 group ${isActive ? 'text-gold' : 'text-dark hover:text-gold'}`}>
+                    {({ isActive }) => (
+                      <>
+                        {item.label}
+                        <span className={`absolute bottom-0 left-0 w-full h-[2px] bg-gradient-to-r from-gold to-gold-light transform origin-left transition-transform duration-300 ${isActive ? 'scale-x-100' : 'scale-x-0 group-hover:scale-x-100'}`} />
+                      </>
+                    )}
+                  </NavLink>
                 )}
-              </Link>
-              <button onClick={signOut} className="text-xs font-black uppercase tracking-wider text-dark hover:text-red-600 transition-colors cursor-pointer bg-transparent border-none">
-                Logout
-              </button>
-            </>
-          ) : (
-            <>
-              <Link to="/cart" className="relative group p-2.5 rounded-xl hover:bg-gold/10 transition-all duration-300">
-                <div className="group-hover:scale-110 transition-transform duration-300">
-                  <IconCart />
-                </div>
-                {cartCount > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-gradient-to-r from-gold to-gold-light text-dark font-black text-[9px] w-5 h-5 rounded-full flex items-center justify-center border-2 border-white shadow-md animate-pulse">
-                    {cartCount}
-                  </span>
+              </li>
+            ))}
+          </ul>
+
+          {/* Right Action Buttons */}
+          <div className="hidden md:flex items-center gap-6">
+            {user ? (
+              <>
+                {isAdmin && (
+                  <Link to="/admin" className="text-xs font-black uppercase tracking-wider text-gold hover:text-gold-light transition-colors duration-300">
+                    Admin Panel
+                  </Link>
                 )}
-              </Link>
-              <Link to="/login" className="px-6 py-3 rounded-xl bg-gradient-to-r from-gold to-gold-light hover:from-gold-light hover:to-gold text-dark font-black text-xs uppercase tracking-wider shadow-md hover:shadow-lg hover:shadow-gold/20 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-300">
-                Login / Register
-              </Link>
-            </>
-          )}
-        </div>
-
-        {/* Hamburger Menu (Mobile Only) */}
-        <button className="md:hidden flex flex-col gap-1.5 p-2 bg-transparent border-none cursor-pointer group" onClick={toggleMenu} aria-label="Toggle Menu">
-          <span className={`w-6 h-0.5 bg-dark transition-all duration-300 ${menuOpen ? 'rotate-45 translate-y-2 bg-gold' : 'group-hover:bg-gold'}`} />
-          <span className={`w-6 h-0.5 bg-dark transition-opacity duration-300 ${menuOpen ? 'opacity-0' : 'group-hover:bg-gold'}`} />
-          <span className={`w-6 h-0.5 bg-dark transition-all duration-300 ${menuOpen ? '-rotate-45 -translate-y-2 bg-gold' : 'group-hover:bg-gold'}`} />
-        </button>
-      </nav>
-
-      {/* Mobile Drawer Menu Overlay */}
-      <div className={`fixed inset-0 z-[1099] bg-dark/60 backdrop-blur-md transition-opacity duration-300 md:hidden ${menuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`} onClick={closeMenu} />
-
-      {/* Mobile Drawer Menu */}
-      <div className={`fixed top-0 right-0 bottom-0 z-[1100] w-80 max-w-[85vw] bg-gradient-to-b from-white via-[#FFFBF4] to-white border-l border-gold/20 shadow-2xl transition-transform duration-300 ease-in-out transform flex flex-col p-6 sm:p-8 gap-6 md:hidden ${menuOpen ? 'translate-x-0' : 'translate-x-full'} overflow-hidden`}>
-        {/* Glow orbs inside the mobile menu */}
-        <div className="absolute top-1/4 -right-16 w-48 h-48 bg-gold/10 rounded-full blur-[65px] pointer-events-none" />
-        <div className="absolute bottom-1/4 -left-16 w-48 h-48 bg-gold/5 rounded-full blur-[65px] pointer-events-none" />
-
-        <div className="flex flex-col gap-3 relative z-10 shrink-0">
-          <div className="flex justify-between items-center pb-4 border-b border-gold/15 font-sans">
-            <Link to="/" className="flex items-center gap-2.5" onClick={closeMenu}>
-              <div className="w-9 h-9 bg-gradient-to-br from-gold to-gold-light rounded-xl flex items-center justify-center shadow-lg shadow-gold/20">
-                <IconLotus className="w-5 h-5 text-dark" />
-              </div>
-              <div className="leading-tight">
-                <div className="font-sans text-base font-black text-dark tracking-wide uppercase">RamSetu</div>
-                <div className="text-[7px] text-gold font-bold tracking-[0.2em] uppercase mt-0.5">— Divine Stones —</div>
-              </div>
-            </Link>
-            <button className="p-2 rounded-xl bg-gold/10 hover:bg-gold/20 text-gold hover:text-dark transition-all duration-300 border-none cursor-pointer flex items-center justify-center" onClick={closeMenu}>
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-
-          {/* Logged in devotee profile tag (if user is authenticated) */}
-          {user && (
-            <div className="flex items-center gap-3 px-4 py-2.5 bg-cream2/60 rounded-xl border border-gold/15 font-sans shrink-0 mx-0.5">
-              <div className="w-8 h-8 rounded-full bg-gold/10 flex items-center justify-center text-gold shrink-0">
-                <User className="w-4 h-4" />
-              </div>
-              <div className="truncate">
-                <p className="text-[8px] text-gray-400 uppercase tracking-wider font-bold">Logged In</p>
-                <p className="text-xs text-dark/95 font-bold truncate max-w-[170px]">{user.email}</p>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Scrollable links */}
-        <div className="flex flex-col gap-2 overflow-y-auto flex-grow pr-1 font-sans relative z-10">
-          {[
-            { to: "/", label: "Home", end: true },
-            { to: "/about", label: "About Ram Setu" },
-            { to: "/shop", label: "Shop Stones" },
-            { to: "/gallery", label: "Gallery" },
-            { to: "/contact", label: "Contact" }
-          ].map((item) => (
-            item.isAnchor ? (
-              <a
-                key={item.to}
-                href={item.to}
-                onClick={closeMenu}
-                className="flex items-center justify-between text-xs font-black py-3.5 px-4 rounded-xl border border-transparent text-dark/80 hover:text-gold hover:bg-gold/5 hover:border-gold/10 transition-all duration-300 uppercase tracking-widest"
-              >
-                <span>{item.label}</span>
-                <span className="w-1.5 h-1.5 rounded-full bg-gold/30" />
-              </a>
-            ) : (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                end={item.end}
-                onClick={closeMenu}
-                className={({ isActive }) => `flex items-center justify-between text-xs font-black py-3.5 px-4 rounded-xl border transition-all duration-300 uppercase tracking-widest ${isActive ? 'text-gold bg-gold/10 border-gold/20' : 'text-dark/80 hover:text-gold hover:bg-gold/5 border-transparent'}`}
-              >
-                <span>{item.label}</span>
-                <span className="w-1.5 h-1.5 rounded-full bg-gold/30" />
-              </NavLink>
-            )
-          ))}
-        </div>
-
-        {/* Footer Area inside Menu */}
-        <div className="mt-auto pt-6 border-t border-gold/15 relative z-10 flex flex-col gap-3">
-          {user ? (
-            <>
-              {isAdmin && (
-                <Link
-                  to="/admin"
-                  onClick={closeMenu}
-                  className="w-full py-3 rounded-xl border border-gold/30 bg-gold/10 text-gold hover:bg-gold hover:text-dark text-center font-bold text-xs uppercase tracking-widest transition-all duration-300"
-                >
-                  Admin Panel
-                </Link>
-              )}
-
-              <div className="flex gap-3 w-full">
-                <Link
-                  to="/my-orders"
-                  onClick={closeMenu}
-                  className="flex-1 py-3 rounded-xl border border-gold/20 bg-transparent text-dark hover:bg-gold/5 text-center font-bold text-xs uppercase tracking-widest transition-all duration-300 truncate"
-                >
+                <Link to="/my-orders" className="text-xs font-black uppercase tracking-wider text-dark hover:text-gold transition-colors duration-300">
                   My Orders
                 </Link>
+                <Link to="/cart" className="relative group p-2.5 rounded-xl hover:bg-gold/10 transition-all duration-300">
+                  <div className="group-hover:scale-110 transition-transform duration-300">
+                    <IconCart />
+                  </div>
+                  {cartCount > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-gradient-to-r from-gold to-gold-light text-dark font-black text-[9px] w-5 h-5 rounded-full flex items-center justify-center border-2 border-white shadow-md animate-pulse">
+                      {cartCount}
+                    </span>
+                  )}
+                </Link>
+                <button onClick={signOut} className="text-xs font-black uppercase tracking-wider text-dark hover:text-red-600 transition-colors cursor-pointer bg-transparent border-none">
+                  Logout
+                </button>
+              </>
+            ) : (
+              <>
+                <Link to="/cart" className="relative group p-2.5 rounded-xl hover:bg-gold/10 transition-all duration-300">
+                  <div className="group-hover:scale-110 transition-transform duration-300">
+                    <IconCart />
+                  </div>
+                  {cartCount > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-gradient-to-r from-gold to-gold-light text-dark font-black text-[9px] w-5 h-5 rounded-full flex items-center justify-center border-2 border-white shadow-md animate-pulse">
+                      {cartCount}
+                    </span>
+                  )}
+                </Link>
+                <Link to="/login" className="px-6 py-3 rounded-xl bg-gradient-to-r from-gold to-gold-light hover:from-gold-light hover:to-gold text-dark font-black text-xs uppercase tracking-wider shadow-md hover:shadow-lg hover:shadow-gold/20 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-300">
+                  Login / Register
+                </Link>
+              </>
+            )}
+          </div>
 
+          {/* Hamburger Menu (Mobile Only) */}
+          <button className="md:hidden flex flex-col gap-1.5 p-2 bg-transparent border-none cursor-pointer group" onClick={toggleMenu} aria-label="Toggle Menu">
+            <span className={`w-6 h-0.5 bg-dark transition-all duration-300 ${menuOpen ? 'rotate-45 translate-y-2 bg-gold' : 'group-hover:bg-gold'}`} />
+            <span className={`w-6 h-0.5 bg-dark transition-opacity duration-300 ${menuOpen ? 'opacity-0' : 'group-hover:bg-gold'}`} />
+            <span className={`w-6 h-0.5 bg-dark transition-all duration-300 ${menuOpen ? '-rotate-45 -translate-y-2 bg-gold' : 'group-hover:bg-gold'}`} />
+          </button>
+        </nav>
+
+        {/* Mobile Drawer Menu Overlay */}
+        <div className={`fixed inset-0 z-[1099] bg-dark/60 backdrop-blur-md transition-opacity duration-300 md:hidden ${menuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`} onClick={closeMenu} />
+
+        {/* Mobile Drawer Menu */}
+        <div className={`fixed top-0 right-0 bottom-0 z-[1100] w-80 max-w-[85vw] bg-gradient-to-b from-white via-[#FFFBF4] to-white border-l border-gold/20 shadow-2xl transition-transform duration-300 ease-in-out transform flex flex-col p-6 sm:p-8 gap-6 md:hidden ${menuOpen ? 'translate-x-0' : 'translate-x-full'} overflow-hidden`}>
+          {/* Glow orbs inside the mobile menu */}
+          <div className="absolute top-1/4 -right-16 w-48 h-48 bg-gold/10 rounded-full blur-[65px] pointer-events-none" />
+          <div className="absolute bottom-1/4 -left-16 w-48 h-48 bg-gold/5 rounded-full blur-[65px] pointer-events-none" />
+
+          <div className="flex flex-col gap-3 relative z-10 shrink-0">
+            <div className="flex justify-between items-center pb-4 border-b border-gold/15 font-sans">
+              <Link to="/" className="flex items-center" onClick={closeMenu}>
+                <img src="/images/logo/logo.png" alt="RamSetu Logo" className="h-9 w-auto object-contain" />
+              </Link>
+              <button className="p-2 rounded-xl bg-gold/10 hover:bg-gold/20 text-gold hover:text-dark transition-all duration-300 border-none cursor-pointer flex items-center justify-center" onClick={closeMenu}>
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Logged in devotee profile tag (if user is authenticated) */}
+            {user && (
+              <div className="flex items-center gap-3 px-4 py-2.5 bg-cream2/60 rounded-xl border border-gold/15 font-sans shrink-0 mx-0.5">
+                <div className="w-8 h-8 rounded-full bg-gold/10 flex items-center justify-center text-gold shrink-0">
+                  <User className="w-4 h-4" />
+                </div>
+                <div className="truncate">
+                  <p className="text-[8px] text-gray-400 uppercase tracking-wider font-bold">Logged In</p>
+                  <p className="text-xs text-dark/95 font-bold truncate max-w-[170px]">{user.email}</p>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Scrollable links */}
+          <div className="flex flex-col gap-2 overflow-y-auto flex-grow pr-1 font-sans relative z-10">
+            {[
+              { to: "/", label: "Home", end: true },
+              { to: "/about", label: "About Ram Setu" },
+              { to: "/shop", label: "Shop" },
+              { to: "/gallery", label: "Gallery" },
+              { to: "/contact", label: "Contact" }
+            ].map((item) => (
+              item.isAnchor ? (
+                <a
+                  key={item.to}
+                  href={item.to}
+                  onClick={closeMenu}
+                  className="flex items-center justify-between text-xs font-black py-3.5 px-4 rounded-xl border border-transparent text-dark/80 hover:text-gold hover:bg-gold/5 hover:border-gold/10 transition-all duration-300 uppercase tracking-widest"
+                >
+                  <span>{item.label}</span>
+                  <span className="w-1.5 h-1.5 rounded-full bg-gold/30" />
+                </a>
+              ) : (
+                <NavLink
+                  key={item.to}
+                  to={item.to}
+                  end={item.end}
+                  onClick={closeMenu}
+                  className={({ isActive }) => `flex items-center justify-between text-xs font-black py-3.5 px-4 rounded-xl border transition-all duration-300 uppercase tracking-widest ${isActive ? 'text-gold bg-gold/10 border-gold/20' : 'text-dark/80 hover:text-gold hover:bg-gold/5 border-transparent'}`}
+                >
+                  <span>{item.label}</span>
+                  <span className="w-1.5 h-1.5 rounded-full bg-gold/30" />
+                </NavLink>
+              )
+            ))}
+          </div>
+
+          {/* Footer Area inside Menu */}
+          <div className="mt-auto pt-6 border-t border-gold/15 relative z-10 flex flex-col gap-3">
+            {user ? (
+              <>
+                {isAdmin && (
+                  <Link
+                    to="/admin"
+                    onClick={closeMenu}
+                    className="w-full py-3 rounded-xl border border-gold/30 bg-gold/10 text-gold hover:bg-gold hover:text-dark text-center font-bold text-xs uppercase tracking-widest transition-all duration-300"
+                  >
+                    Admin Panel
+                  </Link>
+                )}
+
+                <div className="flex gap-3 w-full">
+                  <Link
+                    to="/my-orders"
+                    onClick={closeMenu}
+                    className="flex-1 py-3 rounded-xl border border-gold/20 bg-transparent text-dark hover:bg-gold/5 text-center font-bold text-xs uppercase tracking-widest transition-all duration-300 truncate"
+                  >
+                    My Orders
+                  </Link>
+
+                  <Link
+                    to="/cart"
+                    onClick={closeMenu}
+                    className="flex-1 py-3 rounded-xl border border-gold/20 bg-transparent text-dark hover:bg-gold/5 text-center font-bold text-xs uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-2 truncate"
+                  >
+                    <IconCart />
+                    <span>Cart ({cartCount})</span>
+                  </Link>
+                </div>
+
+                <button
+                  onClick={() => { signOut(); closeMenu() }}
+                  className="w-full py-3 rounded-xl bg-red-50 hover:bg-red-100/80 text-red-600 hover:text-red-700 text-center font-bold text-xs uppercase tracking-widest border border-red-200/50 transition-all duration-300 cursor-pointer"
+                >
+                  Logout
+                </button>
+              </>
+            ) : (
+              <>
                 <Link
                   to="/cart"
                   onClick={closeMenu}
-                  className="flex-1 py-3 rounded-xl border border-gold/20 bg-transparent text-dark hover:bg-gold/5 text-center font-bold text-xs uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-2 truncate"
+                  className="w-full py-3 rounded-xl border border-gold/20 bg-transparent text-dark hover:bg-gold/5 text-center font-bold text-xs uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-2 mb-1"
                 >
                   <IconCart />
                   <span>Cart ({cartCount})</span>
                 </Link>
-              </div>
 
-              <button
-                onClick={() => { signOut(); closeMenu() }}
-                className="w-full py-3 rounded-xl bg-red-50 hover:bg-red-100/80 text-red-600 hover:text-red-700 text-center font-bold text-xs uppercase tracking-widest border border-red-200/50 transition-all duration-300 cursor-pointer"
-              >
-                Logout
-              </button>
-            </>
-          ) : (
-            <>
-              <Link
-                to="/cart"
-                onClick={closeMenu}
-                className="w-full py-3 rounded-xl border border-gold/20 bg-transparent text-dark hover:bg-gold/5 text-center font-bold text-xs uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-2 mb-1"
-              >
-                <IconCart />
-                <span>Cart ({cartCount})</span>
-              </Link>
-
-              <Link
-                to="/login"
-                onClick={closeMenu}
-                className="w-full py-3.5 rounded-xl bg-gold hover:bg-dark text-dark hover:text-gold border border-gold/30 text-center font-black text-xs uppercase tracking-widest transition-all duration-300 shadow-lg shadow-gold/15"
-              >
-                Login / Register
-              </Link>
-            </>
-          )}
+                <Link
+                  to="/login"
+                  onClick={closeMenu}
+                  className="w-full py-3.5 rounded-xl bg-gold hover:bg-dark text-dark hover:text-gold border border-gold/30 text-center font-black text-xs uppercase tracking-widest transition-all duration-300 shadow-lg shadow-gold/15"
+                >
+                  Login / Register
+                </Link>
+              </>
+            )}
+          </div>
         </div>
-      </div>
-    </header>
-    <div className="h-[95px] md:h-[96px] w-full shrink-0" />
+      </header>
+      <div className="h-[95px] md:h-[96px] w-full shrink-0" />
     </>
   )
 }

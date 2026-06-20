@@ -92,8 +92,29 @@ export async function createOrderItems(items) {
 export async function getMyOrders(userId) {
   const { data, error } = await supabase
     .from('orders')
-    .select('*, order_items(*, products(name, product_images(*)))')
+    .select('*, order_items(*, products(id, name, product_images(*)))')
     .eq('user_id', userId)
+    .order('created_at', { ascending: false })
+  if (error) throw error
+  return data || []
+}
+
+export async function createReview(reviewData) {
+  const { data, error } = await supabase
+    .from('reviews')
+    .insert(reviewData)
+    .select()
+    .single()
+  if (error) throw error
+  return data
+}
+
+export async function getProductReviews(productId) {
+  const { data, error } = await supabase
+    .from('reviews')
+    .select('*')
+    .eq('product_id', productId)
+    .eq('is_approved', true)
     .order('created_at', { ascending: false })
   if (error) throw error
   return data || []
