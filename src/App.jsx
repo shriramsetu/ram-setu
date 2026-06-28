@@ -7,7 +7,6 @@ import Shop from './pages/Shop'
 import Gallery from './pages/Gallery'
 import About from './pages/About'
 import Contact from './pages/Contact'
-import ProductDetail from './pages/ProductDetail'
 import Cart from './pages/Cart'
 import Checkout from './pages/Checkout'
 import OrderSuccess from './pages/OrderSuccess'
@@ -38,7 +37,6 @@ export default function App() {
         <Route path="/gallery" element={<PublicLayout><Gallery /></PublicLayout>} />
         <Route path="/about" element={<PublicLayout><About /></PublicLayout>} />
         <Route path="/contact" element={<PublicLayout><Contact /></PublicLayout>} />
-        <Route path="/product/:slug" element={<PublicLayout><ProductDetail /></PublicLayout>} />
         <Route path="/cart" element={<PublicLayout><Cart /></PublicLayout>} />
         <Route path="/checkout" element={<PublicLayout><Checkout /></PublicLayout>} />
         <Route path="/order-success" element={<PublicLayout><OrderSuccess /></PublicLayout>} />

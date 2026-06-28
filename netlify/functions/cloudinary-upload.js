@@ -40,16 +40,18 @@ export const handler = async (event) => {
   })
 
   try {
-    const { image } = JSON.parse(event.body)
-    if (!image) {
+    const { image, file, resource_type } = JSON.parse(event.body || '{}')
+    const mediaToUpload = image || file
+    if (!mediaToUpload) {
       return { 
         statusCode: 400, 
-        body: JSON.stringify({ error: 'No image data provided' }) 
+        body: JSON.stringify({ error: 'No media data provided' }) 
       }
     }
 
-    const uploadResponse = await cloudinary.uploader.upload(image, {
-      folder: 'ramsetu_products'
+    const uploadResponse = await cloudinary.uploader.upload(mediaToUpload, {
+      folder: 'ramsetu_products',
+      resource_type: resource_type || 'auto'
     })
 
     return {
@@ -64,7 +66,7 @@ export const handler = async (event) => {
     console.error('Cloudinary serverless upload error:', err)
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: err.message || 'Image upload failed' })
+      body: JSON.stringify({ error: err.message || 'Media upload failed' })
     }
   }
 }

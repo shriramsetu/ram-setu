@@ -1,4 +1,6 @@
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { supabase } from '../lib/supabase'
 import {
   Facebook,
   Instagram,
@@ -25,6 +27,57 @@ const IconLotus = ({ className = "w-6 h-6 text-gold" }) => (
 )
 
 export default function Footer() {
+  const [logoUrl, setLogoUrl] = useState('/images/logo/logo.png')
+  const [settings, setSettings] = useState({
+    social_instagram: '',
+    social_youtube: '',
+    social_facebook: '',
+    whatsapp_number: '919876543210',
+    contact_email: 'info@ramsetudivinestones.com',
+    contact_location: 'Ayodhya Dham, UP, India',
+    contact_hours: 'Mon–Sat: 9:00 AM – 7:00 PM'
+  })
+
+  useEffect(() => {
+    async function loadSettings() {
+      try {
+        const { data, error } = await supabase.from('site_settings').select('*')
+        const loaded = {}
+        if (!error && data && data.length > 0) {
+          data.forEach(item => {
+            loaded[item.key] = item.value
+          })
+        }
+        const local = localStorage.getItem('admin_settings')
+        const localParsed = local ? JSON.parse(local) : {}
+        setSettings(prev => ({ ...prev, ...localParsed, ...loaded }))
+
+        // Fetch Site Logo strictly from DB
+        const { data: logoData } = await supabase.from('site_media').select('url').eq('media_key', 'site_logo').single()
+        if (logoData && logoData.url && logoData.url.trim() !== '') {
+          setLogoUrl(logoData.url)
+        }
+      } catch {
+        const local = localStorage.getItem('admin_settings')
+        if (local) setSettings(JSON.parse(local))
+      }
+    }
+    loadSettings()
+  }, [])
+
+  const whatsappUrl = settings.whatsapp_number
+    ? (String(settings.whatsapp_number).startsWith('http') ? String(settings.whatsapp_number) : `https://wa.me/${String(settings.whatsapp_number).replace(/[^0-9]/g, '')}`)
+    : 'https://wa.me/919876543210'
+
+  const rawSocials = [
+    { icon: Facebook, label: 'Facebook', href: settings.social_facebook },
+    { icon: Instagram, label: 'Instagram', href: settings.social_instagram },
+    { icon: Youtube, label: 'YouTube', href: settings.social_youtube },
+    { icon: MessageCircle, label: 'WhatsApp', href: whatsappUrl },
+  ]
+  const socialLinks = rawSocials.filter(s => s.href && s.href.trim() !== '' && s.href !== '#')
+  const finalSocials = socialLinks.length > 0 ? socialLinks : rawSocials.map(s => ({ ...s, href: s.href || '#' }))
+
   return (
     <>
       <footer id="contact" className="relative bg-[#0b0b0c] text-cream border-t border-gold/15 pt-24 pb-12 overflow-hidden font-sans">
@@ -38,7 +91,7 @@ export default function Footer() {
             {/* Col 1: Brand (Span 4) */}
             <div className="lg:col-span-4 flex flex-col gap-6 pr-0 lg:pr-8">
               <div className="flex items-center">
-                <img src="/images/logo/logo.png" alt="RamSetu Logo" className="h-12 md:h-14 w-auto object-contain" />
+                <img src={logoUrl} alt="RamSetu Logo" className="h-12 md:h-14 w-auto object-contain" />
               </div>
               <p className="text-xs md:text-sm text-cream/70 leading-relaxed max-w-sm font-sans">
                 Authentic sacred symbols of faith sourced directly from Rameswaram, hand-consecrated and guaranteed to float naturally on water. Invite divine protection and prosperity.
@@ -46,12 +99,7 @@ export default function Footer() {
 
               {/* Social links */}
               <div className="flex items-center gap-3 mt-2">
-                {[
-                  { icon: Facebook, label: 'Facebook', href: '#' },
-                  { icon: Instagram, label: 'Instagram', href: '#' },
-                  { icon: Youtube, label: 'YouTube', href: '#' },
-                  { icon: MessageCircle, label: 'WhatsApp', href: 'https://wa.me/919876543210' },
-                ].map((s, idx) => (
+                {finalSocials.map((s, idx) => (
                   <a
                     key={idx}
                     href={s.href}
@@ -122,25 +170,33 @@ export default function Footer() {
                     <div className="p-1.5 rounded-lg bg-gold/10 text-gold border border-gold/15 group-hover:bg-gold group-hover:text-dark transition-colors duration-300">
                       <Phone className="w-3.5 h-3.5" />
                     </div>
-                    <span className="text-cream/80 hover:text-white transition-colors pt-0.5 font-bold">+91 98765 43210</span>
+                    <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" className="text-cream/80 hover:text-gold-light transition-colors pt-0.5 font-bold">
+                      {settings.whatsapp_number ? (String(settings.whatsapp_number).startsWith('http') ? 'WhatsApp Support' : String(settings.whatsapp_number)) : '+91 98765 43210'}
+                    </a>
                   </li>
                   <li className="flex items-start gap-3 group">
                     <div className="p-1.5 rounded-lg bg-gold/10 text-gold border border-gold/15 group-hover:bg-gold group-hover:text-dark transition-colors duration-300">
                       <Mail className="w-3.5 h-3.5" />
                     </div>
-                    <span className="text-cream/80 hover:text-white transition-colors pt-0.5 break-all font-bold">info@ramsetudivinestones.com</span>
+                    <a href={`mailto:${settings.contact_email || 'info@ramsetudivinestones.com'}`} className="text-cream/80 hover:text-gold-light transition-colors pt-0.5 break-all font-bold">
+                      {settings.contact_email || 'info@ramsetudivinestones.com'}
+                    </a>
                   </li>
                   <li className="flex items-start gap-3 group">
                     <div className="p-1.5 rounded-lg bg-gold/10 text-gold border border-gold/15 group-hover:bg-gold group-hover:text-dark transition-colors duration-300">
                       <MapPin className="w-3.5 h-3.5" />
                     </div>
-                    <span className="text-cream/80 hover:text-white transition-colors pt-0.5">Ayodhya Dham, UP, India</span>
+                    <span className="text-cream/80 hover:text-white transition-colors pt-0.5">
+                      {settings.contact_location || 'Ayodhya Dham, UP, India'}
+                    </span>
                   </li>
                   <li className="flex items-start gap-3 group">
                     <div className="p-1.5 rounded-lg bg-gold/10 text-gold border border-gold/15 group-hover:bg-gold group-hover:text-dark transition-colors duration-300">
                       <Clock className="w-3.5 h-3.5" />
                     </div>
-                    <span className="text-cream/70 pt-0.5">Mon–Sat: 9:00 AM – 7:00 PM</span>
+                    <span className="text-cream/70 pt-0.5">
+                      {settings.contact_hours || 'Mon–Sat: 9:00 AM – 7:00 PM'}
+                    </span>
                   </li>
                 </ul>
               </div>
@@ -190,7 +246,7 @@ export default function Footer() {
       <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-4">
         {/* Call Button */}
         <a 
-          href="tel:+919876543210" 
+          href={settings.whatsapp_number ? (String(settings.whatsapp_number).startsWith('http') ? String(settings.whatsapp_number) : `tel:${String(settings.whatsapp_number).replace(/[^0-9+]/g, '')}`) : 'tel:+919876543210'} 
           className="relative w-9 h-9 sm:w-[52px] sm:h-[52px] rounded-xl sm:rounded-2xl bg-gradient-to-r from-gold to-gold-light hover:from-gold-light hover:to-gold text-dark flex items-center justify-center shadow-lg hover:shadow-[0_0_20px_rgba(212,165,55,0.4)] hover:-translate-y-1 transition-all duration-300 group cursor-pointer border border-gold/25" 
           title="Call Us"
         >
@@ -199,7 +255,7 @@ export default function Footer() {
 
         {/* WhatsApp Button */}
         <a 
-          href="https://wa.me/919876543210" 
+          href={whatsappUrl} 
           target="_blank" 
           rel="noopener noreferrer" 
           className="relative w-9 h-9 sm:w-[52px] sm:h-[52px] rounded-xl sm:rounded-2xl bg-gradient-to-r from-[#25D366] to-[#1ebd54] text-white flex items-center justify-center shadow-lg hover:shadow-[0_0_20px_rgba(37,211,102,0.4)] hover:-translate-y-1 transition-all duration-300 group cursor-pointer border border-green-500/30" 

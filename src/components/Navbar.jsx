@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
-import { Link, NavLink } from 'react-router-dom'
+import { Link, NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useCart } from '../context/CartContext'
-import { X, User } from 'lucide-react'
+import { X, User, LogOut, ShoppingBag } from 'lucide-react'
+import { supabase } from '../lib/supabase'
 
 // Navigation SVG Icons
 const IconLotus = ({ className = "w-6 h-6 text-gold" }) => (
@@ -11,8 +12,8 @@ const IconLotus = ({ className = "w-6 h-6 text-gold" }) => (
   </svg>
 )
 
-const IconCart = () => (
-  <svg className="w-5 h-5 text-dark group-hover:text-gold transition-colors duration-300" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+const IconCart = ({ className = "w-5 h-5" }) => (
+  <svg className={`${className} text-dark group-hover:text-gold transition-colors duration-300`} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
     <path strokeLinecap="round" strokeLinejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
   </svg>
 )
@@ -40,10 +41,17 @@ const IconMapPinSmall = () => (
 )
 
 export default function Navbar() {
+  const navigate = useNavigate()
   const [menuOpen, setMenuOpen] = useState(false)
   const [isScrolled, setIsScrolled] = useState(false)
+  const [logoUrl, setLogoUrl] = useState('/images/logo/logo.png')
   const { user, signOut, isAdmin } = useAuth()
   const { cartCount } = useCart()
+
+  const handleLogout = async () => {
+    await signOut()
+    navigate('/')
+  }
 
   useEffect(() => {
     const handleScroll = () => {
@@ -51,6 +59,20 @@ export default function Navbar() {
     }
     window.addEventListener('scroll', handleScroll)
     return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
+
+  useEffect(() => {
+    supabase.from('site_media').select('url').eq('media_key', 'site_logo').single()
+      .then(({ data }) => {
+        if (data && data.url && data.url.trim() !== '') {
+          setLogoUrl(data.url)
+          // Dynamically update favicon in browser tab
+          const link = document.querySelector("link[rel*='icon']")
+          if (link) {
+            link.href = data.url
+          }
+        }
+      })
   }, [])
 
   function toggleMenu() {
@@ -77,15 +99,13 @@ export default function Navbar() {
             <span className="flex items-center gap-1.5"><IconUsersSmall /> 1000+ Devotees</span>
             <span className="w-1 h-1 rounded-full bg-gold/30" />
             <span className="flex items-center gap-1.5"><IconTruckSmall /> COD Available</span>
-            <span className="w-1 h-1 rounded-full bg-gold/30" />
-            <span className="flex items-center gap-1.5"><IconMapPinSmall /> Free Pan India Delivery</span>
           </span>
         </div>
 
         {/* Navigation */}
         <nav className={`px-4 md:px-8 flex items-center justify-between transition-all duration-300 font-sans h-16 ${isScrolled ? 'bg-white/95 backdrop-blur-md border-b border-gold/20 shadow-[0_10px_35px_rgba(212,165,55,0.06)]' : 'bg-white/98 backdrop-blur-sm border-b border-gold/10 shadow-sm'}`}>
           <Link to="/" className="flex items-center group ml-10 md:ml-24" onClick={closeMenu}>
-            <img src="/images/logo/logo.png" alt="RamSetu Logo" className="h-12 md:h-14 w-auto object-contain group-hover:scale-[1.03] transition-all duration-500" />
+            <img src={logoUrl} alt="RamSetu Logo" className="h-12 md:h-14 w-auto object-contain group-hover:scale-[1.03] transition-all duration-500" />
           </Link>
 
           {/* Desktop Menu */}
@@ -122,25 +142,27 @@ export default function Navbar() {
             {user ? (
               <>
                 {isAdmin && (
-                  <Link to="/admin" className="text-xs font-black uppercase tracking-wider text-gold hover:text-gold-light transition-colors duration-300">
+                  <Link to="/admin" className="px-4 py-2 rounded-xl bg-gold hover:bg-dark text-dark hover:text-gold border border-gold/25 font-black text-xs uppercase tracking-wider transition-all duration-300 hover:scale-105 active:scale-95 shadow-sm">
                     Admin Panel
                   </Link>
                 )}
-                <Link to="/my-orders" className="text-xs font-black uppercase tracking-wider text-dark hover:text-gold transition-colors duration-300">
-                  My Orders
+                <Link to="/my-orders" className="px-4 py-2 rounded-xl border border-gold/20 hover:border-gold/40 bg-gold/5 hover:bg-gold/10 text-dark font-black text-xs uppercase tracking-wider transition-all duration-300 flex items-center gap-1.5 hover:scale-105 active:scale-95 shadow-sm">
+                  <ShoppingBag className="w-3.5 h-3.5 text-gold" />
+                  <span>My Orders</span>
                 </Link>
                 <Link to="/cart" className="relative group p-2.5 rounded-xl hover:bg-gold/10 transition-all duration-300">
                   <div className="group-hover:scale-110 transition-transform duration-300">
                     <IconCart />
                   </div>
                   {cartCount > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-gradient-to-r from-gold to-gold-light text-dark font-black text-[9px] w-5 h-5 rounded-full flex items-center justify-center border-2 border-white shadow-md animate-pulse">
+                    <span className="absolute -top-1 -right-1 bg-gradient-to-r from-gold to-gold-light text-dark font-black text-[9px] w-5 h-5 rounded-full flex items-center justify-center border-2 border-white shadow-md">
                       {cartCount}
                     </span>
                   )}
                 </Link>
-                <button onClick={signOut} className="text-xs font-black uppercase tracking-wider text-dark hover:text-red-600 transition-colors cursor-pointer bg-transparent border-none">
-                  Logout
+                <button onClick={handleLogout} className="text-xs font-black uppercase tracking-wider text-red-600 hover:text-red-700 transition-all duration-300 cursor-pointer bg-transparent border-none flex items-center gap-1.5 hover:scale-105 active:scale-95">
+                  <LogOut className="w-3.5 h-3.5" />
+                  <span>Logout</span>
                 </button>
               </>
             ) : (
@@ -150,7 +172,7 @@ export default function Navbar() {
                     <IconCart />
                   </div>
                   {cartCount > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-gradient-to-r from-gold to-gold-light text-dark font-black text-[9px] w-5 h-5 rounded-full flex items-center justify-center border-2 border-white shadow-md animate-pulse">
+                    <span className="absolute -top-1 -right-1 bg-gradient-to-r from-gold to-gold-light text-dark font-black text-[9px] w-5 h-5 rounded-full flex items-center justify-center border-2 border-white shadow-md">
                       {cartCount}
                     </span>
                   )}
@@ -162,12 +184,25 @@ export default function Navbar() {
             )}
           </div>
 
-          {/* Hamburger Menu (Mobile Only) */}
-          <button className="md:hidden flex flex-col gap-1.5 p-2 bg-transparent border-none cursor-pointer group" onClick={toggleMenu} aria-label="Toggle Menu">
-            <span className={`w-6 h-0.5 bg-dark transition-all duration-300 ${menuOpen ? 'rotate-45 translate-y-2 bg-gold' : 'group-hover:bg-gold'}`} />
-            <span className={`w-6 h-0.5 bg-dark transition-opacity duration-300 ${menuOpen ? 'opacity-0' : 'group-hover:bg-gold'}`} />
-            <span className={`w-6 h-0.5 bg-dark transition-all duration-300 ${menuOpen ? '-rotate-45 -translate-y-2 bg-gold' : 'group-hover:bg-gold'}`} />
-          </button>
+          {/* Mobile Right Controls Group (Cart & Hamburger) */}
+          <div className="flex md:hidden items-center gap-2 mr-1">
+            <Link to="/cart" className="p-2 rounded-lg text-dark transition-colors hover:bg-gold/10 flex items-center justify-center">
+              <div className="relative">
+                <IconCart className="w-6 h-6" />
+                {cartCount > 0 && (
+                  <span className="absolute -top-1.5 -right-1.5 bg-gradient-to-r from-gold to-gold-light text-dark font-black text-[8px] w-4 h-4 rounded-full flex items-center justify-center border border-white shadow-md">
+                    {cartCount}
+                  </span>
+                )}
+              </div>
+            </Link>
+
+            <button className="flex flex-col gap-1.5 p-2 bg-transparent border-none cursor-pointer group" onClick={toggleMenu} aria-label="Toggle Menu">
+              <span className={`w-6 h-0.5 bg-dark transition-all duration-300 ${menuOpen ? 'rotate-45 translate-y-2 bg-gold' : 'group-hover:bg-gold'}`} />
+              <span className={`w-6 h-0.5 bg-dark transition-opacity duration-300 ${menuOpen ? 'opacity-0' : 'group-hover:bg-gold'}`} />
+              <span className={`w-6 h-0.5 bg-dark transition-all duration-300 ${menuOpen ? '-rotate-45 -translate-y-2 bg-gold' : 'group-hover:bg-gold'}`} />
+            </button>
+          </div>
         </nav>
 
         {/* Mobile Drawer Menu Overlay */}
@@ -182,7 +217,7 @@ export default function Navbar() {
           <div className="flex flex-col gap-3 relative z-10 shrink-0">
             <div className="flex justify-between items-center pb-4 border-b border-gold/15 font-sans">
               <Link to="/" className="flex items-center" onClick={closeMenu}>
-                <img src="/images/logo/logo.png" alt="RamSetu Logo" className="h-9 w-auto object-contain" />
+                <img src={logoUrl} alt="RamSetu Logo" className="h-9 w-auto object-contain" />
               </Link>
               <button className="p-2 rounded-xl bg-gold/10 hover:bg-gold/20 text-gold hover:text-dark transition-all duration-300 border-none cursor-pointer flex items-center justify-center" onClick={closeMenu}>
                 <X className="w-4 h-4" />
@@ -245,7 +280,7 @@ export default function Navbar() {
                   <Link
                     to="/admin"
                     onClick={closeMenu}
-                    className="w-full py-3 rounded-xl border border-gold/30 bg-gold/10 text-gold hover:bg-gold hover:text-dark text-center font-bold text-xs uppercase tracking-widest transition-all duration-300"
+                    className="w-full py-3 rounded-xl bg-gold hover:bg-dark text-dark hover:text-gold border border-gold/25 text-center font-black text-xs uppercase tracking-widest transition-all duration-300 shadow-sm"
                   >
                     Admin Panel
                   </Link>
@@ -255,9 +290,10 @@ export default function Navbar() {
                   <Link
                     to="/my-orders"
                     onClick={closeMenu}
-                    className="flex-1 py-3 rounded-xl border border-gold/20 bg-transparent text-dark hover:bg-gold/5 text-center font-bold text-xs uppercase tracking-widest transition-all duration-300 truncate"
+                    className="flex-1 py-3 rounded-xl border border-gold/20 bg-gold/5 hover:bg-gold/10 text-dark font-bold text-xs uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-1.5 truncate"
                   >
-                    My Orders
+                    <ShoppingBag className="w-3.5 h-3.5 text-gold" />
+                    <span>My Orders</span>
                   </Link>
 
                   <Link
@@ -271,10 +307,11 @@ export default function Navbar() {
                 </div>
 
                 <button
-                  onClick={() => { signOut(); closeMenu() }}
-                  className="w-full py-3 rounded-xl bg-red-50 hover:bg-red-100/80 text-red-600 hover:text-red-700 text-center font-bold text-xs uppercase tracking-widest border border-red-200/50 transition-all duration-300 cursor-pointer"
+                  onClick={() => { handleLogout(); closeMenu() }}
+                  className="w-full py-3 rounded-xl bg-red-50 hover:bg-red-100/80 text-red-600 hover:text-red-700 text-center font-bold text-xs uppercase tracking-widest border border-red-200/50 transition-all duration-300 cursor-pointer flex items-center justify-center gap-1.5"
                 >
-                  Logout
+                  <LogOut className="w-3.5 h-3.5" />
+                  <span>Logout</span>
                 </button>
               </>
             ) : (

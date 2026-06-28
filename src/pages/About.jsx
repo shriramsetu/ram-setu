@@ -1,7 +1,8 @@
-import { Fragment } from 'react'
+import { Fragment, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Helmet } from 'react-helmet-async'
 import ScrollReveal from '../components/ScrollReveal'
+import { supabase } from '../lib/supabase'
 
 import { FaWhatsapp } from 'react-icons/fa'
 
@@ -86,6 +87,40 @@ const timeline = [
 ]
 
 export default function About() {
+  const [settings, setSettings] = useState({
+    contact_location: 'Ayodhya, Uttar Pradesh, India'
+  })
+  const [siteMediaMap, setSiteMediaMap] = useState({})
+
+  useEffect(() => {
+    async function loadSettings() {
+      try {
+        const { data, error } = await supabase.from('site_settings').select('*')
+        const loaded = {}
+        if (!error && data && data.length > 0) {
+          data.forEach(item => {
+            loaded[item.key] = item.value
+          })
+        }
+        const local = localStorage.getItem('admin_settings')
+        const localParsed = local ? JSON.parse(local) : {}
+        setSettings(prev => ({ ...prev, ...localParsed, ...loaded }))
+
+        // Fetch Site Media strictly from DB
+        const { data: mediaData } = await supabase.from('site_media').select('*')
+        if (mediaData && mediaData.length > 0) {
+          const mMap = {}
+          mediaData.forEach(m => { mMap[m.media_key] = m.url })
+          setSiteMediaMap(mMap)
+        }
+      } catch {
+        const local = localStorage.getItem('admin_settings')
+        if (local) setSettings(JSON.parse(local))
+      }
+    }
+    loadSettings()
+  }, [])
+
   return (
     <>
       <Helmet>
@@ -129,11 +164,13 @@ export default function About() {
             <div className="absolute -bottom-3 -right-3 w-16 h-16 border-b-4 border-r-4 border-gold rounded-br-3xl hidden md:block z-10" aria-hidden="true" />
 
             <div className="relative w-full rounded-[2rem] overflow-hidden shadow-2xl shadow-dark/20 border-2 border-gold/30 max-w-lg lg:max-w-full">
-              <img
-                src="/images/ram-setu-story.webp"
-                alt="Ram Setu Story"
-                className="w-full h-[320px] sm:h-[450px] md:h-[600px] object-cover group-hover:scale-[1.03] transition-transform duration-1000 ease-out"
-              />
+              {siteMediaMap['story_img'] && (
+                <img
+                  src={siteMediaMap['story_img']}
+                  alt="Ram Setu Story"
+                  className="w-full h-[320px] sm:h-[450px] md:h-[600px] object-cover group-hover:scale-[1.03] transition-transform duration-1000 ease-out"
+                />
+              )}
               <div className="absolute inset-0 bg-gradient-to-t from-dark/80 via-dark/10 to-transparent" />
               <div className="absolute bottom-6 left-6 right-6 flex items-center justify-between">
                 <span className="inline-flex items-center gap-2.5 px-5 py-2.5 bg-dark/85 border border-gold/45 backdrop-blur-md text-gold-pale font-black text-xs uppercase tracking-widest rounded-full shadow-xl">
@@ -170,12 +207,9 @@ export default function About() {
             <div className="mt-11 flex flex-wrap sm:flex-nowrap gap-3 md:gap-5">
               <Link
                 to="/shop"
-                className="group inline-flex items-center gap-2 md:gap-3 px-4 py-3.5 md:px-8 md:py-4 rounded-full bg-gradient-to-r from-gold to-gold-light hover:from-gold-light hover:to-gold text-dark font-black tracking-wider shadow-lg shadow-gold/25 hover:shadow-xl hover:shadow-gold/45 hover:-translate-y-1 transition-all duration-300 text-xs md:text-sm uppercase cursor-pointer whitespace-nowrap shrink-0"
+                className="group inline-flex items-center gap-2 md:gap-3 px-4 py-3.5 md:px-8 md:py-4 rounded-full bg-gradient-to-r from-gold to-gold-light hover:from-gold-light hover:to-gold text-dark font-black tracking-wider shadow-lg shadow-gold/25 hover:shadow-xl hover:shadow-gold/45 hover:-translate-y-1 transition-all duration-300 text-xs md:text-sm uppercase cursor-pointer whitespace-nowrap shrink-0 justify-center"
               >
                 <span>Shop Now</span>
-                <span className="transition-transform duration-300 group-hover:translate-x-1.5">
-                  <IconArrowRight />
-                </span>
               </Link>
             </div>
           </div>
@@ -328,7 +362,7 @@ export default function About() {
                 </div>
                 <div className="text-left">
                   <span className="text-white font-bold text-sm block tracking-wider font-sans">RamSetu Divine Stones</span>
-                  <span className="text-white/40 text-xs font-semibold font-sans">Ayodhya, Uttar Pradesh, India</span>
+                  <span className="text-white/40 text-xs font-semibold font-sans">{settings.contact_location || 'Ayodhya, Uttar Pradesh, India'}</span>
                 </div>
               </div>
             </div>
@@ -357,15 +391,12 @@ export default function About() {
           <div className="relative flex flex-wrap sm:flex-nowrap gap-3 md:gap-5 shrink-0 z-10">
             <Link
               to="/shop"
-              className="group inline-flex items-center gap-2 md:gap-3 px-4 py-3.5 md:px-8 md:py-4 rounded-full bg-gradient-to-r from-gold via-gold-light to-gold hover:from-gold-light hover:to-gold text-dark font-black tracking-widest shadow-xl shadow-black/35 hover:shadow-gold/45 hover:-translate-y-1 transition-all duration-300 text-xs md:text-sm whitespace-nowrap uppercase shrink-0"
+              className="group inline-flex items-center gap-2 md:gap-3 px-4 py-3.5 md:px-8 md:py-4 rounded-full bg-gradient-to-r from-gold via-gold-light to-gold hover:from-gold-light hover:to-gold text-dark font-black tracking-widest shadow-xl shadow-black/35 hover:shadow-gold/45 hover:-translate-y-1 transition-all duration-300 text-xs md:text-sm whitespace-nowrap uppercase shrink-0 justify-center"
             >
               Shop Now
-              <span className="transition-transform duration-300 group-hover:translate-x-1.5">
-                <IconArrowRight />
-              </span>
             </Link>
             <a
-              href="https://wa.me/919876543210?text=I want to know more about Ram Setu stones"
+              href={settings.whatsapp_number ? (String(settings.whatsapp_number).startsWith('http') ? String(settings.whatsapp_number) : `https://wa.me/${String(settings.whatsapp_number).replace(/[^0-9]/g, '')}?text=I want to know more about Ram Setu stones`) : 'https://wa.me/919876543210?text=I want to know more about Ram Setu stones'}
               target="_blank"
               rel="noopener noreferrer"
               className="group px-4 py-3.5 md:px-8 md:py-4 rounded-full border-2 border-white/20 text-white font-black hover:border-gold hover:bg-gold/10 hover:-translate-y-1 hover:shadow-lg transition-all duration-300 text-xs md:text-sm whitespace-nowrap flex items-center gap-2 md:gap-2.5 tracking-wider uppercase shrink-0"

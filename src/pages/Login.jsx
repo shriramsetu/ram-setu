@@ -3,7 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { Helmet } from 'react-helmet-async'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
-import { Lock, Mail, ShieldAlert, ArrowRight } from 'lucide-react'
+import { Lock, Mail, ShieldAlert, ArrowRight, Eye, EyeOff } from 'lucide-react'
 
 export default function Login() {
   const { signIn } = useAuth()
@@ -12,6 +12,7 @@ export default function Login() {
   const from = location.state?.from || '/'
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
@@ -114,14 +115,24 @@ export default function Login() {
                 <label className="text-[10px] text-gray-400 uppercase tracking-widest font-bold font-sans flex items-center gap-1.5 pl-1">
                   <Lock className="w-3.5 h-3.5 text-gold/70" /> Password
                 </label>
-                <input
-                  type="password"
-                  required
-                  value={password}
-                  onChange={e => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="w-full h-11 sm:h-12 px-4 rounded-xl border border-gold/20 bg-cream2/40 text-dark placeholder:text-gray-300 text-sm font-sans outline-none focus:border-gold focus:ring-1 focus:ring-gold/40 focus:bg-white transition-all duration-300 shadow-inner"
-                />
+                <div className="relative">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    required
+                    value={password}
+                    onChange={e => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="w-full h-11 sm:h-12 pl-4 pr-11 rounded-xl border border-gold/20 bg-cream2/40 text-dark placeholder:text-gray-300 text-sm font-sans outline-none focus:border-gold focus:ring-1 focus:ring-gold/40 focus:bg-white transition-all duration-300 shadow-inner"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gold transition-colors focus:outline-none"
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                  >
+                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
+                </div>
               </div>
 
               {/* Submit Button */}

@@ -47,7 +47,6 @@ export default function OrderSuccess() {
               className="w-full py-4 px-6 bg-white border border-gold/20 text-slate-700 font-bold text-xs uppercase tracking-widest rounded-xl hover:border-gold/45 hover:bg-gold/5 transition-all duration-300 flex items-center justify-center gap-2"
             >
               Continue Shopping
-              <ArrowRight className="w-4 h-4 text-gold" />
             </Link>
           </div>
         </div>

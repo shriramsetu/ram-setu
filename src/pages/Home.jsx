@@ -2,10 +2,10 @@ import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Helmet } from 'react-helmet-async'
 import toast from 'react-hot-toast'
-import { getFeaturedProducts, primaryImage } from '../lib/supabase'
+import { getFeaturedProducts, primaryImage, supabase } from '../lib/supabase'
 import { useCart } from '../context/CartContext'
 import ScrollReveal from '../components/ScrollReveal'
-import { Award, Waves, PenTool, Truck, Sparkles, Navigation, ShieldCheck, RefreshCw, ShoppingCart, HelpCircle, Star, ChevronUp, ChevronDown, ArrowRight } from 'lucide-react'
+import { Award, Waves, PenTool, Truck, Sparkles, Navigation, ShieldCheck, RefreshCw, ShoppingCart, HelpCircle, Star, ChevronUp, ChevronDown, ArrowRight, Image } from 'lucide-react'
 import { FaWhatsapp } from 'react-icons/fa'
 
 // SVG Icons
@@ -103,12 +103,85 @@ export default function Home() {
   const [testiIndex, setTestiIndex] = useState(0)
   const testiTrackRef = useRef(null)
   const [openFaq, setOpenFaq] = useState(null)
-  const [proofPlaying, setProofPlaying] = useState(false)
-  const proofVideoRef = useRef(null)
+  const [videoIndex, setVideoIndex] = useState(0)
+  const videoRefs = useRef([])
+  const [playingVideoIdx, setPlayingVideoIdx] = useState(null)
+  const [proofVideos, setProofVideos] = useState([
+    { key: 'proof_video_1', src: '', title: 'Stone Floating on Water', desc: 'Watch the miracle live' },
+    { key: 'proof_video_2', src: '', title: 'Daily Consecration Rituals', desc: 'Abhishek at Rameswaram' },
+    { key: 'proof_video_3', src: '', title: 'Devotee Unboxing & Test', desc: 'Real floating proof at home' },
+    { key: 'proof_video_4', src: '', title: 'Collection Showcase', desc: 'Authenticated sacred stones' }
+  ])
+  const [siteMediaMap, setSiteMediaMap] = useState({})
+  const [siteMediaList, setSiteMediaList] = useState([])
+
+  const handleVideoChange = (newIdx) => {
+    if (playingVideoIdx !== null && videoRefs.current[playingVideoIdx]) {
+      videoRefs.current[playingVideoIdx].pause()
+    }
+    setPlayingVideoIdx(null)
+    setVideoIndex(newIdx)
+  }
   const [email, setEmail] = useState('')
+  const [dbReviews, setDbReviews] = useState([])
   const [activeImg, setActiveImg] = useState(0)
   const [qty, setQty] = useState(1)
   const thumbRef = useRef(null)
+
+  const [settings, setSettings] = useState({
+    shipping_threshold: 499,
+    shipping_flat_rate: 79,
+    social_instagram: '',
+    social_youtube: '',
+    social_facebook: '',
+    whatsapp_number: '919876543210',
+    contact_email: 'info@ramsetudivinestones.com',
+    contact_location: 'Ayodhya Dham, UP, India',
+    contact_hours: 'Mon–Sat: 9:00 AM – 7:00 PM'
+  })
+
+  useEffect(() => {
+    async function loadSettings() {
+      try {
+        const { data, error } = await supabase.from('site_settings').select('*')
+        const loaded = {}
+        if (!error && data && data.length > 0) {
+          data.forEach(item => {
+            let val = item.value
+            if (!isNaN(val) && typeof val === 'string' && val.trim() !== '') val = parseFloat(val)
+            if (item.key === 'free_shipping_threshold') loaded['shipping_threshold'] = parseFloat(val) || 0
+            else if (item.key === 'shipping_charge') loaded['shipping_flat_rate'] = parseFloat(val) || 0
+            else loaded[item.key] = val
+          })
+        }
+        const local = localStorage.getItem('admin_settings')
+        const localParsed = local ? JSON.parse(local) : {}
+        setSettings(prev => ({ ...prev, ...localParsed, ...loaded }))
+
+        // Fetch Site Media
+        const { data: mediaData } = await supabase.from('site_media').select('*').order('updated_at', { ascending: true })
+        if (mediaData && mediaData.length > 0) {
+          const mMap = {}
+          mediaData.forEach(m => { mMap[m.media_key] = m.url })
+          setSiteMediaMap(mMap)
+          setSiteMediaList(mediaData)
+          const fetchedVideos = mediaData.filter(m => m.media_type === 'video' && m.media_key !== 'hero_video' && m.url)
+          if (fetchedVideos.length > 0) {
+            setProofVideos(fetchedVideos.map(v => ({
+              key: v.media_key,
+              src: v.url,
+              title: v.title || '',
+              desc: v.description || ''
+            })))
+          }
+        }
+      } catch {
+        const local = localStorage.getItem('admin_settings')
+        if (local) setSettings(JSON.parse(local))
+      }
+    }
+    loadSettings()
+  }, [])
 
   const touchStartX = useRef(0)
   const touchStartY = useRef(0)
@@ -162,19 +235,56 @@ export default function Home() {
     }
   }
 
+  const defaultReviews = [
+    {
+      comment: "I felt a divine connection when I received this sacred stone. Truly blessed! The stone floats exactly as promised. This is a genuine piece of faith.",
+      name: "Ramesh Sharma",
+      rating: 5,
+      title: "Blessed and Divine",
+      location: "Ayodhya, UP"
+    },
+    {
+      comment: "The stone floats perfectly on water. A symbol of faith and miracles. I gifted it to my mother and she was overjoyed. Beautifully packaged with love.",
+      name: "Pooja Iyer",
+      rating: 5,
+      title: "Miraculous Floating Stone",
+      location: "Chennai, TN"
+    },
+    {
+      comment: "Beautiful packaging and genuine product. Thank you RamSetu Divine Stones! I've placed my order three times already. Each stone is unique and powerful.",
+      name: "Amit Verma",
+      rating: 5,
+      title: "A Genuine Offering",
+      location: "Lucknow, UP"
+    }
+  ]
+  const displayReviews = dbReviews
+
   useEffect(() => {
     getFeaturedProducts()
       .then(setProducts)
       .catch(() => setProducts([]))
+
+    supabase
+      .from('reviews')
+      .select('*')
+      .eq('is_approved', true)
+      .eq('show_on_home', true)
+      .order('created_at', { ascending: false })
+      .then(({ data, error }) => {
+        if (!error && data) {
+          setDbReviews(data)
+        }
+      })
   }, [])
 
   // Testimonial auto-scroll
   useEffect(() => {
     const interval = setInterval(() => {
-      setTestiIndex(i => (i + 1) % 3)
+      setTestiIndex(i => (i + 1) % displayReviews.length)
     }, 5000)
     return () => clearInterval(interval)
-  }, [])
+  }, [displayReviews.length])
 
   useEffect(() => {
     if (testiTrackRef.current) {
@@ -183,20 +293,14 @@ export default function Home() {
   }, [testiIndex])
 
   function scrollTesti(dir) {
-    setTestiIndex(i => (i + dir + 3) % 3)
+    setTestiIndex(i => (i + dir + displayReviews.length) % displayReviews.length)
   }
 
   function toggleFaq(idx) {
     setOpenFaq(o => o === idx ? null : idx)
   }
 
-  function playProofVideo() {
-    if (proofVideoRef.current) {
-      proofVideoRef.current.controls = true
-      proofVideoRef.current.play()
-      setProofPlaying(true)
-    }
-  }
+
 
   function handleSubscribe(e) {
     e.preventDefault()
@@ -222,17 +326,26 @@ export default function Home() {
       </Helmet>
 
       {/* Hero Section */}
-      <section className="relative min-h-[30vh] sm:min-h-[60vh] md:min-h-[90vh] flex items-center justify-start overflow-hidden bg-dark">
-        {/* Background visual layers */}
-        <div className="absolute inset-0 bg-[url('/images/banner/ram-setu-banner.webp')] bg-cover bg-[75%_center] md:bg-center opacity-100 scale-100 pointer-events-none" />
-        <div className="absolute inset-0 bg-gradient-to-r from-dark via-dark/50 to-transparent pointer-events-none" />
+      <section className="relative min-h-[25vh] sm:min-h-[60vh] md:min-h-[90vh] flex items-center justify-start overflow-hidden bg-dark">
+        {/* Background video layer */}
+        <video
+          autoPlay
+          muted
+          loop
+          playsInline
+          key={siteMediaMap['hero_video'] || ''}
+          className="absolute inset-0 w-full h-full object-cover opacity-100 pointer-events-none"
+        >
+          {siteMediaMap['hero_video'] && <source src={siteMediaMap['hero_video']} type="video/mp4" />}
+        </video>
+        <div className="absolute inset-0 bg-gradient-to-r from-dark/85 via-dark/45 to-transparent pointer-events-none" />
 
         {/* Glowing aura blobs */}
         <div className="absolute top-1/4 right-1/4 w-[500px] h-[500px] bg-gold/10 rounded-full blur-[120px] pointer-events-none animate-pulse" />
         <div className="absolute bottom-10 left-10 w-[300px] h-[300px] bg-[#4A2500]/40 rounded-full blur-[80px] pointer-events-none" />
 
-        <div className="relative z-10 w-full max-w-7xl mx-auto px-4 md:px-8 py-8 md:py-24 flex items-center justify-start">
-          <div className="max-w-3xl text-left border-l-4 border-gold pl-4 md:pl-5 py-2">
+        <div className="relative z-10 w-full max-w-7xl mx-auto px-4 md:px-8 py-5 md:py-24 flex items-center justify-start">
+          <div className="max-w-3xl text-left border-l-4 border-gold pl-4 md:pl-5 py-2 drop-shadow-[0_4px_8px_rgba(0,0,0,0.9)]">
             <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gold/10 border border-gold/30 text-gold-pale text-xs font-semibold tracking-wider uppercase mb-6 shadow-lg backdrop-blur-sm">
               <svg className="w-3.5 h-3.5 text-gold" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v13M12 3c-1 2-3 5-3 8v3h3M12 3c1 2 3 5 3 8v3h-3M9 14v4a2 2 0 002 2h2a2 2 0 002-2v-4M5.5 13c0 2 1.5 4 3.5 4M18.5 13c0 2-1.5 4-3.5 4" />
@@ -246,11 +359,8 @@ export default function Home() {
             </p>
 
             <div className="mt-6 md:mt-10 flex flex-wrap gap-3 md:gap-4">
-              <a href="#shop" className="px-5 py-3 md:px-8 md:py-4 rounded-full bg-gradient-to-r from-gold to-gold-light hover:from-gold-light hover:to-gold text-dark font-black tracking-wider shadow-lg hover:shadow-gold/30 hover:-translate-y-0.5 transition-all duration-300 text-[10px] md:text-xs lg:text-sm uppercase flex items-center gap-2 border-none cursor-pointer group">
+              <a href="#shop" className="px-5 py-3 md:px-8 md:py-4 rounded-full bg-gradient-to-r from-gold to-gold-light hover:from-gold-light hover:to-gold text-dark font-black tracking-wider shadow-lg hover:shadow-gold/30 hover:-translate-y-0.5 transition-all duration-300 text-[10px] md:text-xs lg:text-sm uppercase flex items-center gap-2 border-none cursor-pointer group justify-center">
                 Shop Now
-                <svg className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
-                </svg>
               </a>
               <a href="#about" className="px-5 py-3 md:px-8 md:py-4 rounded-full border-2 border-white/20 text-white font-bold hover:border-white hover:-translate-y-0.5 transition-all duration-300 text-[10px] md:text-xs lg:text-sm uppercase cursor-pointer">
                 Our Story
@@ -262,17 +372,17 @@ export default function Home() {
 
 
       {/* Homepage Featured Product Showcase */}
-      <ScrollReveal className="relative py-20 bg-cream2 overflow-hidden" id="shop">
+      <ScrollReveal className="relative pt-4 md:pt-8 pb-6 md:pb-20 bg-cream2 overflow-hidden" id="shop">
         {/* Soft background aura glows */}
         <div className="absolute top-0 right-0 w-80 h-80 bg-gold/5 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute bottom-0 left-0 w-[450px] h-[450px] bg-gold/10 rounded-full blur-[120px] pointer-events-none" />
 
         <div className="relative z-10 max-w-7xl mx-auto px-4 md:px-8">
-          <div className="text-center mb-12">
-            <span className="text-gold text-xs font-black tracking-[0.2em] uppercase block mb-2 font-sans">✦ Consecrated &amp; Blessed</span>
-            <h2 className="font-sans text-3xl md:text-5xl font-extrabold text-dark tracking-tight">Bring Home the Sacred Blessing</h2>
+          <div className="text-center mb-6 md:mb-12">
+            <span className="text-gold text-xs font-black tracking-[0.2em] uppercase block mb-1.5 md:mb-2 font-sans">✦ Consecrated &amp; Blessed</span>
+            <h2 className="font-sans text-[22px] sm:text-3xl md:text-5xl font-extrabold text-dark tracking-tight">Bring Home the Sacred Blessing</h2>
             <p className="mt-3 text-gray-500 font-sans max-w-lg mx-auto text-sm md:text-base">
-              Authentic floating stone collected from the sacred shores near Rameswaram. Custom engraved and consecrated with Vedic prayers.
+              Authentic floating stone collected from the sacred shores near Rameswaram.
             </p>
             <div className="w-16 h-1 bg-gradient-to-r from-gold to-gold-light mx-auto mt-4 rounded-full" />
           </div>
@@ -284,28 +394,8 @@ export default function Home() {
           ) : (
             (() => {
               const product = products[0];
-              const images = product.product_images || [];
-              const baseImages = images.length > 0 ? images : [{ url: primaryImage(product) }];
-              const fallbackUrls = [
-                '/images/gallery/gallery-1.jpeg',
-                '/images/gallery/gallery-2.jpeg',
-                '/images/gallery/gallery-3.jpeg',
-                '/images/gallery/gallery-4.jpeg'
-              ];
-              const tempImages = [...baseImages];
-              for (let i = 0; i < fallbackUrls.length; i++) {
-                if (tempImages.length >= 4) break;
-                const fallbackUrl = fallbackUrls[i];
-                if (!tempImages.some(img => img.url === fallbackUrl)) {
-                  tempImages.push({ url: fallbackUrl });
-                }
-              }
-              const displayImages = tempImages.map(img => ({
-                ...img,
-                url: (img.url && img.url.trim() && !img.url.includes('placeholder') && !img.url.includes('placeholder.co'))
-                  ? img.url
-                  : '/images/gallery/gallery-1.jpeg'
-              }));
+              const images = (product.product_images || []).filter(img => img && img.url && typeof img.url === 'string' && img.url.trim() !== '' && !img.url.includes('placeholder'));
+              const displayImages = images.length > 0 ? images : (product.image_url ? [{ url: product.image_url }] : []);
 
               const handleBuyNow = () => {
                 for (let i = 0; i < qty; i++) {
@@ -331,34 +421,34 @@ export default function Home() {
                         <img
                           src={displayImages[activeImg]?.url || primaryImage(product)}
                           alt={product.name}
-                          className="w-full h-full object-cover sm:object-contain p-0 sm:p-4 transition-transform duration-750 group-hover/img:scale-105 pointer-events-none"
+                          className="w-full h-full object-contain p-4 transition-transform duration-750 group-hover/img:scale-105 pointer-events-none"
                         />
                       </div>
                       {displayImages.length > 1 && (
-                        <div className="flex flex-row sm:flex-col items-center gap-3 shrink-0 w-full sm:w-auto justify-start sm:justify-center px-1 sm:px-2 overflow-x-auto no-scrollbar">
+                        <div className="w-full sm:w-auto shrink-0 px-0 sm:px-2">
                           {displayImages.length > 4 && (
                             <button
                               type="button"
                               onClick={() => scrollThumbnails('up')}
-                              className="text-gold p-1 hover:scale-125 transition-transform duration-200 cursor-pointer hidden sm:block"
+                              className="text-gold p-1 hover:scale-125 transition-transform duration-200 cursor-pointer hidden sm:block mx-auto mb-1"
                             >
                               <ChevronUp className="w-5 h-5" />
                             </button>
                           )}
                           <div
                             ref={thumbRef}
-                            className="flex flex-row sm:flex-col gap-3 sm:h-[400px] sm:max-h-[400px] overflow-y-auto sm:overflow-y-auto overflow-x-auto sm:overflow-x-hidden pr-1.5 scrollbar-none shrink-0 w-full sm:w-auto scroll-smooth py-2 px-2"
+                            className="flex flex-row sm:flex-col gap-2.5 sm:gap-3 sm:h-[400px] sm:max-h-[400px] overflow-x-auto sm:overflow-x-hidden sm:overflow-y-auto pr-0 sm:pr-1.5 scrollbar-none shrink-0 w-full sm:w-auto scroll-smooth py-1 sm:py-2 px-0.5 justify-between sm:justify-start"
                           >
                             {displayImages.map((img, i) => (
                               <button
                                 key={i}
                                 onClick={() => setActiveImg(i)}
-                                className={`w-14 h-14 rounded-2xl overflow-hidden border-2 cursor-pointer transition-all duration-300 shrink-0 ${i === activeImg
+                                className={`w-[calc((100%-1.875rem)/4)] sm:w-14 h-auto sm:h-14 aspect-square rounded-2xl overflow-hidden border-2 cursor-pointer transition-all duration-300 shrink-0 ${i === activeImg
                                   ? 'border-gold shadow-[0_0_12px_rgba(212,165,55,0.4)] bg-[#FAF4E8] scale-105 opacity-100'
                                   : 'border-gold/10 opacity-60 hover:opacity-100 hover:border-gold/35 bg-[#FAF4E8]/50 scale-100'
                                   }`}
                               >
-                                <img src={img.url} alt="" className="w-full h-full object-cover" />
+                                <img src={img.url} alt="" className="w-full h-full object-contain p-1.5 sm:p-2" />
                               </button>
                             ))}
                           </div>
@@ -366,7 +456,7 @@ export default function Home() {
                             <button
                               type="button"
                               onClick={() => scrollThumbnails('down')}
-                              className="text-gold p-1 hover:scale-125 transition-transform duration-200 cursor-pointer hidden sm:block"
+                              className="text-gold p-1 hover:scale-125 transition-transform duration-200 cursor-pointer hidden sm:block mx-auto mt-1"
                             >
                               <ChevronDown className="w-5 h-5" />
                             </button>
@@ -384,14 +474,20 @@ export default function Home() {
 
 
                       <div className="flex items-center gap-3.5 mb-5 bg-[#FFFDF9]/85 border border-gold/10 px-4 py-2.5 rounded-2xl w-fit shadow-sm">
-                        <span className="font-sans font-black text-dark text-3xl">₹{Math.round(product.price)}</span>
+                        <span className="font-sans font-black text-dark text-2xl">₹{Math.round(product.price)}</span>
                         {product.compare_price && (
                           <del className="text-gray-400 text-sm font-semibold">₹{Math.round(product.compare_price)}</del>
                         )}
-                        {product.price < product.compare_price && (
-                          <span className="bg-gradient-to-r from-emerald-500 to-teal-600 text-white text-[10px] font-black px-2.5 py-1 rounded-full shadow-sm">
-                            SAVE {Math.round(((product.compare_price - product.price) / product.compare_price) * 100)}%
-                          </span>
+                        {product.stock_qty > 0 && (
+                          <div className="flex items-center gap-1.5 text-[10px] font-sans font-black ml-2">
+                            <span className="text-gray-400 tracking-wider">STOCK:</span>
+                            <span className="px-3.5 py-1 rounded-lg border border-gold/20 bg-cream2 text-dark min-w-[2.5rem] text-center">
+                              {product.stock_qty}
+                            </span>
+                            <span className="px-2 py-1 rounded-md bg-emerald-50 text-emerald-700 font-extrabold text-[9px] border border-emerald-100/50">
+                              IN
+                            </span>
+                          </div>
                         )}
                       </div>
 
@@ -411,7 +507,7 @@ export default function Home() {
                           <PenTool className="w-3.5 h-3.5 text-gold" /> Free Engraving
                         </span>
                         <span className="inline-flex items-center gap-1.5 bg-gradient-to-b from-white to-[#FAF6EE] border border-gold/15 rounded-xl px-3 py-1.5 text-xs font-bold text-dark shadow-sm">
-                          <Truck className="w-3.5 h-3.5 text-gold" /> Free Shipping
+                          <Truck className="w-3.5 h-3.5 text-gold" /> {(product && product.price >= settings.shipping_threshold) || settings.shipping_flat_rate === 0 ? 'Free Delivery' : `Free Delivery above ₹${settings.shipping_threshold}`}
                         </span>
                       </div>
                     </div>
@@ -466,7 +562,6 @@ export default function Home() {
                             className="w-full py-3 rounded-full bg-gradient-to-r from-gold via-gold-light to-gold hover:scale-[1.01] active:scale-99 text-dark font-black text-xs uppercase tracking-widest shadow-md hover:shadow-gold/25 transition-all duration-300 cursor-pointer flex items-center justify-center gap-2 border-none h-12"
                           >
                             <Sparkles className="w-4.5 h-4.5" /> Buy Now
-                            <ArrowRight className="w-4.5 h-4.5" />
                           </button>
                         </div>
                       )}
@@ -487,7 +582,7 @@ export default function Home() {
         <div className="absolute bottom-0 right-0 w-96 h-96 bg-gold/10 rounded-full translate-x-1/2 translate-y-1/2 blur-3xl pointer-events-none" />
 
         {/* Section Header */}
-        <div className="relative z-10 text-center pt-20 pb-14 px-4 md:px-8 max-w-7xl mx-auto">
+        <div className="relative z-10 w-full text-center pt-4 md:pt-20 pb-4 md:pb-14 px-4 md:px-8 max-w-7xl mx-auto">
           <span className="text-gold text-xs font-black tracking-[0.25em] uppercase block mb-3 font-sans">
             ✦ Real. Verified. Divine.
           </span>
@@ -501,72 +596,100 @@ export default function Home() {
         </div>
 
         {/* Video + Testimonials Grid */}
-        <div className="relative z-10 max-w-7xl mx-auto px-4 md:px-8 pb-20 grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-start">
+        <div className="relative z-10 w-full max-w-7xl mx-auto px-4 md:px-8 pb-20 grid grid-cols-1 lg:grid-cols-[450px_1fr] gap-10 lg:gap-16 items-start">
 
-          {/* Video Player */}
+          {/* Video Player Slider */}
           <div className="group relative">
             {/* Concentric Rotating Halos */}
             <div className="absolute -inset-10 border border-dashed border-gold/15 rounded-full animate-[spin_60s_linear_infinite] pointer-events-none hidden md:block" />
             <div className="absolute -inset-6 border border-dotted border-gold/25 rounded-full animate-[spin_40s_linear_infinite_reverse] pointer-events-none hidden md:block" />
 
             {/* Glow ring */}
-            <div className="absolute -inset-1 bg-gradient-to-br from-gold/30 via-gold/10 to-transparent rounded-3xl blur-xl opacity-60 group-hover:opacity-90 transition-opacity duration-500 pointer-events-none" />
-            <div className="relative rounded-3xl overflow-hidden border-2 border-gold/30 shadow-2xl shadow-gold/15 transition-all duration-500 hover:border-gold/60">
-              <video
-                ref={proofVideoRef}
-                src="/images/gallery/gallery-video-1.mp4"
-                playsInline
-                preload="metadata"
-                className="w-full aspect-[16/10] object-cover"
-              />
-              {!proofPlaying && (
-                <div
-                  className="absolute inset-0 flex flex-col items-center justify-center cursor-pointer bg-gradient-to-t from-dark/70 via-dark/20 to-transparent backdrop-blur-[1px] transition-all duration-300 group-hover:backdrop-blur-0"
-                  onClick={playProofVideo}
-                >
-                  {/* Play button with pulse ring */}
-                  <div className="relative">
-                    <div className="absolute inset-0 rounded-full bg-gold/40 animate-ping scale-125" />
-                    <div className="relative w-20 h-20 rounded-full bg-gradient-to-br from-gold to-gold-light flex items-center justify-center shadow-2xl shadow-gold/40 hover:scale-110 transition-transform duration-300 pl-1.5">
-                      <svg className="w-8 h-8 text-dark" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M8 5v14l11-7z" />
-                      </svg>
-                    </div>
+            <div className="absolute -inset-1 bg-gradient-to-br from-gold/30 via-gold/10 to-transparent rounded-[2.5rem] blur-xl opacity-60 group-hover:opacity-90 transition-opacity duration-500 pointer-events-none" />
+
+            <div className="relative rounded-[2rem] overflow-hidden border-4 border-gold/30 shadow-2xl shadow-gold/15 transition-all duration-500 hover:border-gold/60 bg-black w-full max-w-[450px] mx-auto">
+              {/* Slide Track */}
+              <div className="flex transition-transform duration-500 ease-out" style={{ transform: `translateX(-${videoIndex * 100}%)` }}>
+                {proofVideos.map((video, idx) => (
+                  <div key={idx} className="min-w-full relative aspect-[2/3] flex items-center justify-center">
+                    <video
+                      ref={el => videoRefs.current[idx] = el}
+                      src={video.src}
+                      playsInline
+                      controls={playingVideoIdx === idx}
+                      preload="metadata"
+                      className="w-full h-full object-cover"
+                      onPlay={() => setPlayingVideoIdx(idx)}
+                      onPause={() => {
+                        if (playingVideoIdx === idx) setPlayingVideoIdx(null)
+                      }}
+                    />
+
+                    {playingVideoIdx !== idx && (
+                      <div
+                        className="absolute inset-0 flex flex-col items-center justify-center cursor-pointer bg-gradient-to-t from-dark/85 via-dark/30 to-transparent backdrop-blur-[0.5px] transition-all duration-300 group-hover:backdrop-blur-0 p-6 text-center"
+                        onClick={() => {
+                          if (videoRefs.current[idx]) {
+                            videoRefs.current[idx].play()
+                            setPlayingVideoIdx(idx)
+                          }
+                        }}
+                      >
+                        <div className="relative mb-3">
+                          <div className="absolute inset-0 rounded-full bg-gold/40 animate-ping scale-110" />
+                          <div className="relative w-16 h-16 rounded-full bg-gradient-to-br from-gold to-gold-light flex items-center justify-center shadow-2xl pl-1">
+                            <svg className="w-6 h-6 text-dark" fill="currentColor" viewBox="0 0 24 24">
+                              <path d="M8 5v14l11-7z" />
+                            </svg>
+                          </div>
+                        </div>
+                        {video.title && <span className="text-white font-sans font-bold text-xs uppercase tracking-widest">{video.title}</span>}
+                        {video.desc && <span className="text-white/60 text-[10px] font-sans mt-0.5">{video.desc}</span>}
+                      </div>
+                    )}
                   </div>
-                  <span className="mt-4 text-white/90 text-sm font-sans font-semibold tracking-wide">Tap to Watch</span>
-                </div>
-              )}
-              {/* Bottom label bar */}
-              {!proofPlaying && (
-                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-dark via-dark/60 to-transparent px-5 py-4">
-                  <div className="flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse" />
-                    <span className="text-white/80 text-xs font-sans font-semibold tracking-wider">LIVE FLOATING PROOF</span>
-                  </div>
-                </div>
-              )}
+                ))}
+              </div>
+
+              {/* Navigation Arrows */}
+              <button
+                type="button"
+                onClick={() => handleVideoChange((videoIndex - 1 + proofVideos.length) % proofVideos.length)}
+                className="absolute left-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 border border-white/25 text-white flex items-center justify-center cursor-pointer backdrop-blur-sm z-20 hover:scale-105 active:scale-95 transition-all duration-200"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+                </svg>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleVideoChange((videoIndex + 1) % proofVideos.length)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 border border-white/25 text-white flex items-center justify-center cursor-pointer backdrop-blur-sm z-20 hover:scale-105 active:scale-95 transition-all duration-200"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                </svg>
+              </button>
+
+              {/* Indicator Dots */}
+              <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-20">
+                {proofVideos.map((_, idx) => (
+                  <button
+                    type="button"
+                    key={idx}
+                    onClick={() => handleVideoChange(idx)}
+                    className={`w-2 h-2 rounded-full transition-all duration-300 ${videoIndex === idx ? 'bg-gold w-4' : 'bg-white/40 hover:bg-white/60'}`}
+                  />
+                ))}
+              </div>
             </div>
 
-            {/* Stats Row below video */}
-            <div className="mt-5 grid grid-cols-3 gap-3">
-              {[
-                { val: '1000+', label: 'Verified Orders' },
-                { val: '100%', label: 'Float Guaranteed' },
-                { val: '5★', label: 'Avg. Rating' },
-              ].map(s => (
-                <div key={s.label} className="bg-white/80 border border-gold/15 rounded-2xl py-3.5 px-2.5 text-center hover:border-gold/45 hover:shadow-md hover:shadow-gold/5 transition-all duration-300 backdrop-blur-sm shadow-sm">
-                  <div className="font-sans text-lg md:text-xl font-extrabold bg-gradient-to-r from-gold to-gold-light bg-clip-text text-transparent">{s.val}</div>
-                  <div className="text-gray-400 text-[10px] font-sans uppercase tracking-wider mt-0.5">{s.label}</div>
-                </div>
-              ))}
+            <div className="w-full max-w-[450px] mx-auto flex justify-center mt-5">
+              <Link to="/gallery" className="w-full inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-full bg-gradient-to-r from-gold to-gold-light hover:from-gold-light hover:to-gold text-dark font-black text-xs uppercase tracking-wider shadow-lg hover:shadow-gold/30 hover:-translate-y-0.5 transition-all duration-300 border-none cursor-pointer group">
+                <Image className="w-4 h-4 shrink-0" />
+                <span>View Full Gallery</span>
+              </Link>
             </div>
-
-            <Link to="/gallery" className="inline-flex items-center justify-center gap-2.5 px-8 py-3.5 rounded-full bg-gradient-to-r from-gold to-gold-light hover:from-gold-light hover:to-gold text-dark font-black text-xs uppercase tracking-wider shadow-lg hover:shadow-gold/30 hover:-translate-y-0.5 transition-all duration-300 border-none cursor-pointer mt-5 group">
-              View Full Gallery
-              <svg className="w-4 h-4 transform group-hover:translate-x-1 transition-transform duration-300 text-dark" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
-              </svg>
-            </Link>
           </div>
 
           {/* Testimonials */}
@@ -579,102 +702,139 @@ export default function Home() {
 
             {/* Slider */}
             <div className="relative overflow-hidden w-full flex-1">
-              <div className="flex transition-transform duration-500 ease-out" ref={testiTrackRef}>
-                {[
-                  {
-                    quote: "I felt a divine connection when I received this sacred stone. Truly blessed! The stone floats exactly as promised. This is a genuine piece of faith.",
-                    author: "Ramesh Sharma",
-                    loc: "Ayodhya, UP",
-                    img: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&q=80"
-                  },
-                  {
-                    quote: "The stone floats perfectly on water. A symbol of faith and miracles. I gifted it to my mother and she was overjoyed. Beautifully packaged with love.",
-                    author: "Pooja Iyer",
-                    loc: "Chennai, TN",
-                    img: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&q=80"
-                  },
-                  {
-                    quote: "Beautiful packaging and genuine product. Thank you RamSetu Divine Stones! I've placed my order three times already. Each stone is unique and powerful.",
-                    author: "Amit Verma",
-                    loc: "Lucknow, UP",
-                    img: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&q=80"
-                  }
-                ].map((testi, i) => (
-                  <div key={i} className="min-w-full">
-                    <div className="relative bg-gradient-to-br from-white to-[#FFFDF9]/60 border border-gold/15 rounded-3xl p-7 md:p-9 overflow-hidden shadow-md hover:shadow-xl hover:shadow-gold/5 transition-all duration-350 group/testi">
-                      {/* Golden corner brackets */}
-                      <div className="absolute top-0 left-0 w-6 h-6 border-t-2 border-l-2 border-gold/20 rounded-tl-2xl pointer-events-none group-hover/testi:border-gold transition-colors duration-300" />
-                      <div className="absolute bottom-0 right-0 w-6 h-6 border-b-2 border-r-2 border-gold/20 rounded-br-2xl pointer-events-none group-hover/testi:border-gold transition-colors duration-300" />
+              {displayReviews.length > 0 ? (
+                <>
+                  <div className="flex transition-transform duration-500 ease-out" ref={testiTrackRef}>
+                    {displayReviews.map((testi, i) => (
+                      <div key={i} className="min-w-full p-1 h-full">
+                        <div className="relative bg-gradient-to-br from-white via-[#FFFDF9] to-amber-50/30 border-2 border-gold/20 rounded-2xl sm:rounded-[2rem] p-5 sm:p-7 md:p-8 overflow-hidden hover:border-gold/50 transition-all duration-500 group/testi flex flex-col justify-between h-[320px] sm:h-[340px] md:h-[350px]">
+                          {/* Decorative background glow & accent lines */}
+                          <div className="absolute -top-12 -right-12 w-36 h-36 bg-gold/10 rounded-full blur-2xl pointer-events-none group-hover/testi:bg-gold/20 transition-all duration-500" />
+                          <div className="absolute top-0 left-0 w-6 h-6 sm:w-8 sm:h-8 border-t-2 border-l-2 border-gold/40 rounded-tl-xl sm:rounded-tl-[1.8rem] pointer-events-none group-hover/testi:border-gold transition-colors duration-300" />
+                          <div className="absolute bottom-0 right-0 w-6 h-6 sm:w-8 sm:h-8 border-b-2 border-r-2 border-gold/40 rounded-br-xl sm:rounded-br-[1.8rem] pointer-events-none group-hover/testi:border-gold transition-colors duration-300" />
 
-                      {/* Decorative quote mark */}
-                      <span className="absolute top-4 right-6 text-gold/10 font-sans font-black text-8xl leading-none select-none">"</span>
+                          {/* Decorative giant quote mark */}
+                          <span className="absolute top-3 right-5 sm:top-4 sm:right-6 text-gold/15 font-serif font-black text-7xl sm:text-8xl leading-none select-none pointer-events-none">"</span>
 
-                      {/* Stars */}
-                      <div className="flex gap-0.5 mb-5">
-                        {[...Array(5)].map((_, j) => (
-                          <svg key={j} className="w-4 h-4 text-gold fill-current" viewBox="0 0 24 24">
-                            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                          </svg>
-                        ))}
-                      </div>
+                          <div className="flex-1 flex flex-col overflow-hidden">
+                            {/* Rating Pill */}
+                            <div className="flex items-center gap-1.5 bg-gradient-to-r from-gold/15 to-amber-500/10 px-3 py-1 sm:px-3.5 sm:py-1.5 rounded-full border border-gold/25 w-fit mb-3 sm:mb-4 shrink-0">
+                              <div className="flex gap-0.5">
+                                {[...Array(5)].map((_, j) => (
+                                  <svg key={j} className={`w-3.5 h-3.5 ${j < testi.rating ? 'text-gold fill-current drop-shadow-[0_1px_2px_rgba(212,175,55,0.4)]' : 'text-gray-200'}`} viewBox="0 0 24 24">
+                                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                                  </svg>
+                                ))}
+                              </div>
+                              <span className="text-[10px] sm:text-[11px] font-black text-slate-800 tracking-wider ml-0.5">{testi.rating}.0 / 5.0</span>
+                            </div>
 
-                      <blockquote className="text-gray-600 text-sm md:text-base leading-relaxed mb-8 font-sans relative z-10 italic">
-                        "{testi.quote}"
-                      </blockquote>
+                            {testi.title && (
+                              <h4 className="text-slate-900 font-sans font-black text-sm sm:text-base md:text-lg mb-1.5 sm:mb-2 tracking-tight line-clamp-1 shrink-0">{testi.title}</h4>
+                            )}
 
-                      <div className="flex items-center gap-4 border-t border-gray-100 pt-5">
-                        <div className="relative">
-                          <img src={testi.img} alt={testi.author} className="w-12 h-12 rounded-full object-cover border-2 border-gold/30" />
-                          <span className="absolute -bottom-1 -right-1 w-5 h-5 bg-gold rounded-full flex items-center justify-center">
-                            <svg className="w-2.5 h-2.5 text-dark fill-current" viewBox="0 0 24 24">
-                              <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                          </span>
+                            <div className="flex-1 overflow-y-auto no-scrollbar pr-1">
+                              <blockquote className="text-slate-700 text-xs sm:text-sm md:text-base leading-relaxed font-sans relative z-10 font-medium italic">
+                                "{testi.comment}"
+                              </blockquote>
+                            </div>
+                          </div>
+
+                          {/* Author Info Footer */}
+                          <div className="flex items-center justify-between gap-2 border-t border-gold/15 pt-3.5 sm:pt-4 mt-auto">
+                            <div className="flex items-center gap-2.5 sm:gap-3.5 min-w-0">
+                              <div className="relative shrink-0">
+                                <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl sm:rounded-2xl bg-gradient-to-br from-gold via-gold-light to-amber-600 text-dark font-black text-xs sm:text-base flex items-center justify-center">
+                                  {testi.name ? testi.name.charAt(0).toUpperCase() : 'D'}
+                                </div>
+                              </div>
+                              <div className="text-left truncate">
+                                <strong className="block text-slate-900 font-sans text-xs sm:text-sm font-extrabold truncate">{testi.name}</strong>
+                                <span className="text-gold font-sans text-[10px] sm:text-xs font-semibold block truncate">{testi.location || 'India'}</span>
+                              </div>
+                            </div>
+
+                            <div className="bg-emerald-50 text-emerald-800 border border-emerald-200/80 px-2.5 py-1 sm:px-3 rounded-full text-[9px] sm:text-xs font-bold tracking-wider flex items-center gap-1 shrink-0">
+                              <svg className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-emerald-600 fill-current shrink-0" viewBox="0 0 24 24">
+                                <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                              </svg>
+                              <span>Verified Devotee</span>
+                            </div>
+                          </div>
                         </div>
-                        <div>
-                          <strong className="block text-dark font-sans text-sm font-bold">{testi.author}</strong>
-                          <span className="text-gold font-sans text-xs font-semibold">{testi.loc} · Verified Buyer</span>
-                        </div>
                       </div>
+                    ))}
+                  </div>
+
+                  {/* Navigation + Dots */}
+                  <div className="flex items-center justify-between mt-6">
+                    <div className="flex gap-2">
+                      {displayReviews.map((_, i) => (
+                        <button
+                          key={i}
+                          onClick={() => setTestiIndex(i)}
+                          className={`rounded-full transition-all duration-300 ${testiIndex === i ? 'bg-gold w-6 h-2.5' : 'bg-gray-300 hover:bg-gold/40 w-2.5 h-2.5'}`}
+                        />
+                      ))}
+                    </div>
+                    <div className="flex gap-3">
+                      <button
+                        onClick={() => scrollTesti(-1)}
+                        className="w-11 h-11 rounded-full border-2 border-gold/20 text-gray-400 hover:border-gold hover:text-gold hover:bg-gold/10 transition-all duration-300 flex items-center justify-center cursor-pointer"
+                      >
+                        <svg className="w-5 h-5 text-gold" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+                        </svg>
+                      </button>
+                      <button
+                        onClick={() => scrollTesti(1)}
+                        className="w-11 h-11 rounded-full bg-gold/15 border-2 border-gold/30 text-gold hover:bg-gold hover:text-dark transition-all duration-300 flex items-center justify-center cursor-pointer"
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                        </svg>
+                      </button>
                     </div>
                   </div>
-                ))}
-              </div>
+                </>
+              ) : (
+                <div className="flex flex-col items-center justify-center p-8 text-center bg-gradient-to-br from-white via-[#FFFDF9] to-amber-50/30 border-2 border-gold/20 rounded-[2.5rem] h-[320px] sm:h-[340px] md:h-[350px]">
+                  <div className="w-14 h-14 rounded-full bg-gold/10 flex items-center justify-center mb-4 shadow-sm">
+                    <Star className="w-6 h-6 text-gold fill-gold" />
+                  </div>
+                  <h4 className="font-sans font-black text-slate-800 text-sm sm:text-base uppercase tracking-wider">No reviews available</h4>
+                  <p className="text-gray-400 font-sans text-xs sm:text-sm mt-2 max-w-xs leading-relaxed font-medium">
+                    Check back soon to read divine experiences shared by our global devotees!
+                  </p>
+                </div>
+              )}
             </div>
 
-            {/* Navigation + Dots */}
-            <div className="flex items-center justify-between mt-6">
-              <div className="flex gap-2">
-                {[0, 1, 2].map(i => (
-                  <button
-                    key={i}
-                    onClick={() => setTestiIndex(i)}
-                    className={`rounded-full transition-all duration-300 ${testiIndex === i ? 'bg-gold w-6 h-2.5' : 'bg-gray-300 hover:bg-gold/40 w-2.5 h-2.5'}`}
-                  />
-                ))}
-              </div>
-              <div className="flex gap-3">
-                <button
-                  onClick={() => scrollTesti(-1)}
-                  className="w-11 h-11 rounded-full border-2 border-gold/20 text-gray-400 hover:border-gold hover:text-gold hover:bg-gold/10 transition-all duration-300 flex items-center justify-center cursor-pointer"
-                >
-                  <svg className="w-5 h-5 text-gold" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
-                  </svg>
-                </button>
-                <button
-                  onClick={() => scrollTesti(1)}
-                  className="w-11 h-11 rounded-full bg-gold/15 border-2 border-gold/30 text-gold hover:bg-gold hover:text-dark transition-all duration-300 flex items-center justify-center cursor-pointer"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-                  </svg>
-                </button>
-              </div>
+            {/* Stats Row below reviews */}
+            <div className="mt-8 grid grid-cols-3 gap-3 w-full">
+              {[
+                { val: '1000+', label: 'Verified Orders' },
+                { val: '100%', label: 'Float Promise' },
+                { val: '5.0★', label: 'Avg. Rating' },
+              ].map(s => (
+                <div key={s.label} className="bg-gradient-to-br from-white/95 to-[#FFFDF9]/90 border border-gold/20 rounded-2xl py-3.5 px-2 text-center hover:border-gold/50 transition-all duration-300 shadow-sm relative overflow-hidden group">
+                  <div className="font-sans text-base sm:text-lg font-black bg-gradient-to-r from-[#A37A2C] via-gold to-[#B8893A] bg-clip-text text-transparent group-hover:scale-105 transition-transform duration-300 flex items-center justify-center gap-0.5">
+                    {s.val === '5.0★' ? (
+                      <>
+                        <span>5.0</span>
+                        <Star className="w-3.5 h-3.5 fill-gold text-gold shrink-0" />
+                      </>
+                    ) : (
+                      <span>{s.val}</span>
+                    )}
+                  </div>
+                  <div className="text-gray-500 text-[9px] sm:text-xs font-sans font-bold uppercase tracking-wider mt-1 leading-snug">{s.label}</div>
+                </div>
+              ))}
             </div>
 
             {/* Trust note */}
-            <div className="mt-8 flex items-center gap-3 bg-gold/5 border border-gold/15 rounded-xl px-5 py-4">
+            <div className="mt-6 flex items-center gap-3 bg-gold/5 border border-gold/15 rounded-xl px-5 py-4">
               <svg className="w-8 h-8 text-gold shrink-0" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
               </svg>
@@ -691,7 +851,7 @@ export default function Home() {
 
 
       {/* Story of Ram Setu */}
-      <ScrollReveal className="relative overflow-hidden bg-gradient-to-b from-cream to-[#FAF3E0] py-24 border-t border-b border-gold/15" id="about">
+      <ScrollReveal className="relative overflow-hidden bg-gradient-to-b from-cream to-[#FAF3E0] py-10 md:py-24 border-t border-b border-gold/15" id="about">
         {/* Decorative background elements */}
         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-gold/5 rounded-full blur-[120px] pointer-events-none" />
         <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-orange-500/5 rounded-full blur-[100px] pointer-events-none" />
@@ -710,11 +870,13 @@ export default function Home() {
                 {/* Image overlay gradient */}
                 <div className="absolute inset-0 bg-gradient-to-t from-dark/60 via-transparent to-transparent z-10 pointer-events-none" />
 
-                <img
-                  src="/images/ram-setu-story.webp"
-                  alt="Ram Setu Story"
-                  className="w-full h-[320px] sm:h-[450px] md:h-[600px] object-cover block group-hover/story:scale-105 transition-transform duration-700"
-                />
+                {siteMediaMap['story_img'] && (
+                  <img
+                    src={siteMediaMap['story_img']}
+                    alt="Ram Setu Story"
+                    className="w-full h-[320px] sm:h-[450px] md:h-[600px] object-cover block group-hover/story:scale-105 transition-transform duration-700"
+                  />
+                )}
 
                 {/* Image Floating Badge */}
                 <span className="absolute bottom-6 left-6 z-20 bg-dark/85 border border-gold/45 backdrop-blur-md text-gold-pale px-4 py-2 rounded-full text-[10px] sm:text-xs font-extrabold tracking-widest uppercase shadow-lg flex items-center gap-1.5">
@@ -734,11 +896,11 @@ export default function Home() {
                 <span className="text-gold font-extrabold tracking-widest text-xs uppercase mb-3 block font-sans">
                   ✦ Ancient Legend
                 </span>
-                <h2 className="font-sans text-3xl md:text-5xl font-black text-dark mb-6 leading-tight tracking-tight">
+                <h2 className="font-sans text-3xl md:text-5xl font-black text-dark mb-4 md:mb-6 leading-tight tracking-tight">
                   The Story of <span className="bg-gradient-to-r from-gold to-orange-600 bg-clip-text text-transparent">Ram Setu</span>
                 </h2>
 
-                <div className="w-20 h-[3px] bg-gradient-to-r from-gold to-orange-500 mb-8 rounded-full" />
+                <div className="w-20 h-[3px] bg-gradient-to-r from-gold to-orange-500 mb-5 md:mb-8 rounded-full" />
 
                 <p className="text-gray-700 font-sans leading-relaxed text-sm md:text-base mb-6 font-medium">
                   According to the Ramayana, Lord Ram and his army built the mighty bridge across the sea to Lanka. These stones are believed to be a part of that divine legacy, a reminder of faith, devotion and the power of belief. Carrying one brings the blessings of Lord Ram into your home.
@@ -758,12 +920,9 @@ export default function Home() {
                 <div className="flex flex-wrap gap-4 items-center">
                   <Link
                     to="/about"
-                    className="group inline-flex items-center gap-2 px-8 py-4 rounded-full bg-gradient-to-r from-gold to-gold-light hover:from-gold-light hover:to-gold text-dark font-extrabold shadow-lg hover:shadow-gold/25 hover:-translate-y-0.5 transition-all duration-300 text-xs uppercase tracking-wider border-none"
+                    className="group inline-flex items-center gap-2 px-8 py-4 rounded-full bg-gradient-to-r from-gold to-gold-light hover:from-gold-light hover:to-gold text-dark font-extrabold shadow-lg hover:shadow-gold/25 hover:-translate-y-0.5 transition-all duration-300 text-xs uppercase tracking-wider border-none justify-center"
                   >
                     Know Our Story
-                    <svg className="w-4 h-4 transform group-hover:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
-                    </svg>
                   </Link>
                 </div>
               </div>
@@ -774,59 +933,57 @@ export default function Home() {
       </ScrollReveal>
 
       {/* Divine Gallery */}
-      <ScrollReveal className="relative py-24 bg-gradient-to-b from-[#FAF3E0] to-cream2 border-t border-b border-gold/15 overflow-hidden" id="gallery">
-        {/* Subtle dot grid */}
-        <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'radial-gradient(#B8893A 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
+      {siteMediaList.filter(m => m.media_type === 'image' && m.media_key !== 'site_logo' && m.media_key !== 'story_img' && m.url && m.show_on_home === true).length > 0 && (
+        <ScrollReveal className="relative py-10 md:py-24 bg-gradient-to-b from-[#FAF3E0] to-cream2 border-t border-b border-gold/15 overflow-hidden" id="gallery">
+          {/* Subtle dot grid */}
+          <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'radial-gradient(#B8893A 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
 
+          {/* Soft glow blobs */}
+          <div className="absolute top-0 right-0 w-96 h-96 bg-gold/5 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute bottom-0 left-0 w-96 h-96 bg-gold/8 rounded-full blur-[120px] pointer-events-none" />
 
+          <div className="max-w-7xl mx-auto px-4 md:px-8 relative z-10">
+            <div className="text-center mb-8 md:mb-16">
+              <span className="text-gold text-xs font-bold tracking-[0.25em] uppercase block mb-3 font-sans">✦ Sacred Visuals</span>
+              <h2 className="font-sans text-3xl md:text-5xl font-extrabold text-dark tracking-tight">Divine Gallery</h2>
+              <p className="mt-4 text-gray-500 font-sans max-w-lg mx-auto text-sm md:text-base leading-relaxed">
+                Sacred Ram Setu stones — each one a piece of divine history captured in its purest form.
+              </p>
+              <div className="w-20 h-[3px] bg-gradient-to-r from-gold to-orange-500 mx-auto mt-6 rounded-full" />
+            </div>
 
-        {/* Soft glow blobs */}
-        <div className="absolute top-0 right-0 w-96 h-96 bg-gold/5 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute bottom-0 left-0 w-96 h-96 bg-gold/8 rounded-full blur-[120px] pointer-events-none" />
-
-        <div className="max-w-7xl mx-auto px-4 md:px-8 relative z-10">
-          <div className="text-center mb-16">
-            <span className="text-gold text-xs font-bold tracking-[0.25em] uppercase block mb-3 font-sans">✦ Sacred Visuals</span>
-            <h2 className="font-sans text-3xl md:text-5xl font-extrabold text-dark tracking-tight">Divine Gallery</h2>
-            <p className="mt-4 text-gray-500 font-sans max-w-lg mx-auto text-sm md:text-base leading-relaxed">
-              Sacred Ram Setu stones — each one a piece of divine history captured in its purest form.
-            </p>
-            <div className="w-20 h-[3px] bg-gradient-to-r from-gold to-orange-500 mx-auto mt-6 rounded-full" />
-          </div>
-
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
-            {[
-              { src: '/images/gallery/gallery-1.jpeg', alt: 'Ram Setu Stone', caption: 'Authentic Ram Setu Stones', sub: 'Collected from sacred shores' },
-              { src: '/images/gallery/gallery-2.jpeg', alt: 'Sacred Floating Stone', caption: 'Sacred Floating Stones', sub: 'Floats naturally on water' },
-              { src: '/images/gallery/gallery-3.jpeg', alt: 'Stone Collection', caption: 'Stone Collection', sub: 'Hand-picked with devotion' },
-              { src: '/images/gallery/gallery-4.jpeg', alt: 'Divine Stone', caption: 'Divine Proof of Legend', sub: 'The miracle that amazed the world' },
-            ].map((img, i) => (
-              <div key={i} className="relative aspect-[2/3] overflow-hidden rounded-[2rem] group cursor-pointer border-2 border-gold/15 hover:border-gold hover:shadow-[0_20px_50px_rgba(212,165,55,0.2)] transition-all duration-500 bg-[#FAF6EE]">
-                <div className="absolute inset-0 w-full h-full -translate-x-full group-hover:translate-x-full bg-gradient-to-r from-transparent via-white/10 to-transparent transition-transform duration-1000 ease-out z-20 pointer-events-none" />
-                <img src={img.src} alt={img.alt} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
-                <div className="absolute inset-0 bg-gradient-to-t from-dark/95 via-dark/20 to-transparent flex flex-col justify-end p-4 sm:p-5 z-10">
-                  <div className="translate-y-3 group-hover:translate-y-0 transition-transform duration-500">
-                    <span className="text-white font-sans font-black text-sm sm:text-base tracking-tight block group-hover:text-gold transition-colors duration-300">{img.caption}</span>
-                    <small className="text-gold-pale font-sans font-semibold text-[10px] mt-1 block opacity-0 group-hover:opacity-100 transition-opacity duration-500 delay-100">{img.sub}</small>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
+              {siteMediaList
+                .filter(m => m.media_type === 'image' && m.media_key !== 'site_logo' && m.media_key !== 'story_img' && m.url && m.show_on_home === true)
+                .slice(0, 4)
+                .map((imgItem, i) => (
+                  <div key={imgItem.media_key || i} className="relative aspect-[2/3] overflow-hidden rounded-[2rem] group cursor-pointer border-2 border-gold/15 hover:border-gold hover:shadow-[0_20px_50px_rgba(212,165,55,0.2)] transition-all duration-500 bg-[#FAF6EE]">
+                    <div className="absolute inset-0 w-full h-full -translate-x-full group-hover:translate-x-full bg-gradient-to-r from-transparent via-white/10 to-transparent transition-transform duration-1000 ease-out z-20 pointer-events-none" />
+                    <img src={imgItem.url} alt={imgItem.title || 'Divine Floating Stones'} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                    {(imgItem.title || imgItem.description) && (
+                      <div className="absolute inset-0 bg-gradient-to-t from-dark/95 via-dark/20 to-transparent flex flex-col justify-end p-4 sm:p-5 z-10">
+                        <div className="translate-y-3 group-hover:translate-y-0 transition-transform duration-500">
+                          {imgItem.title && <span className="text-white font-sans font-black text-sm sm:text-base tracking-tight block group-hover:text-gold transition-colors duration-300">{imgItem.title}</span>}
+                          {imgItem.description && <small className="text-gold-pale font-sans font-semibold text-[10px] mt-1 block opacity-0 group-hover:opacity-100 transition-opacity duration-500 delay-100">{imgItem.description}</small>}
+                        </div>
+                      </div>
+                    )}
                   </div>
-                </div>
-              </div>
-            ))}
-          </div>
+                ))}
+            </div>
 
-          <div className="text-center mt-14">
-            <Link
-              to="/gallery"
-              className="group inline-flex items-center justify-center gap-2.5 px-10 py-4 rounded-full bg-gradient-to-r from-gold to-gold-light hover:from-gold-light hover:to-gold text-dark font-black text-xs uppercase tracking-widest shadow-lg hover:shadow-gold/30 hover:-translate-y-0.5 transition-all duration-300 border-none cursor-pointer"
-            >
-              See Full Gallery
-              <svg className="w-4 h-4 transform group-hover:translate-x-1 transition-transform duration-300 text-dark" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
-              </svg>
-            </Link>
+            <div className="text-center mt-6 md:mt-14">
+              <Link
+                to="/gallery"
+                className="group inline-flex items-center justify-center gap-2 px-10 py-4 rounded-full bg-gradient-to-r from-gold to-gold-light hover:from-gold-light hover:to-gold text-dark font-black text-xs uppercase tracking-widest shadow-lg hover:shadow-gold/30 hover:-translate-y-0.5 transition-all duration-300 border-none cursor-pointer"
+              >
+                <Image className="w-4 h-4 shrink-0" />
+                <span>See Full Gallery</span>
+              </Link>
+            </div>
           </div>
-        </div>
-      </ScrollReveal>
+        </ScrollReveal>
+      )}
 
       {/* Our Divine Community */}
       <ScrollReveal className="relative py-20 bg-cream2 overflow-hidden border-b border-gold/10">
@@ -848,52 +1005,57 @@ export default function Home() {
           {/* 2 videos side by side + social below */}
           <div className="max-w-3xl mx-auto">
 
-            {/* 2 portrait reel videos */}
-            <div className="grid grid-cols-2 gap-5 mb-10">
-              {[
-                { src: '/images/gallery/gallery-video-2.mp4', label: 'Live Proof', badge: 'bg-red-600/90 text-white', caption: 'Daily Abhishek & Floating Test' },
-                { src: '/images/gallery/gallery-video-3.mp4', label: 'Devotee Proof', badge: 'bg-gold/90 text-dark', caption: 'Consecration Rituals & Stories' },
-              ].map((v, i) => (
-                <a
-                  key={i}
-                  href="https://www.instagram.com/ramsetustones/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group block relative rounded-[2rem] overflow-hidden shadow-xl border-2 border-gold/20 hover:border-gold hover:shadow-[0_20px_50px_-10px_rgba(212,165,55,0.35)] hover:-translate-y-1.5 transition-all duration-500 aspect-[9/16] bg-dark"
-                >
-                  <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full bg-gradient-to-r from-transparent via-white/15 to-transparent transition-transform duration-1000 ease-out z-20 pointer-events-none" />
-                  <video src={v.src} autoPlay muted loop playsInline className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
-                  <div className="absolute top-3 inset-x-3 flex justify-between items-center z-20 pointer-events-none">
-                    <span className={`px-2.5 py-1 rounded-full ${v.badge} text-[8px] font-black uppercase tracking-widest shadow-md backdrop-blur-sm`}>{v.label}</span>
-                    <div className="w-7 h-7 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center text-white border border-white/10">
-                      <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="2" width="20" height="20" rx="5" ry="5" /><path d="M16 11.37A4 4 0 1112.63 8 4 4 0 0116 11.37z" /><line x1="17.5" y1="6.5" x2="17.51" y2="6.5" /></svg>
-                    </div>
-                  </div>
-                  <div className="absolute inset-x-3 bottom-3 z-20">
-                    <div className="bg-black/60 backdrop-blur-md border border-white/10 px-3 py-2.5 rounded-2xl group-hover:border-gold/30 transition-colors duration-300">
-                      <p className="text-white font-black text-[10px] leading-snug">{v.caption}</p>
-                    </div>
-                  </div>
-                </a>
-              ))}
-            </div>
+            {/* Portrait reel videos (Max 2) */}
+            {siteMediaList.filter(m => m.media_type === 'video' && m.media_key !== 'hero_video' && m.url && m.show_on_home === true).length > 0 && (
+              <div className="grid grid-cols-2 max-w-2xl mx-auto gap-5 mb-10">
+                {siteMediaList
+                  .filter(m => m.media_type === 'video' && m.media_key !== 'hero_video' && m.url && m.show_on_home === true)
+                  .slice(0, 2)
+                  .map((v, i) => (
+                    <a
+                      key={v.media_key || i}
+                      href={settings.social_instagram || "https://www.instagram.com/ramsetustones/"}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="group block relative rounded-[2rem] overflow-hidden shadow-xl border-2 border-gold/20 hover:border-gold hover:shadow-[0_20px_50px_-10px_rgba(212,165,55,0.35)] hover:-translate-y-1.5 transition-all duration-500 aspect-[9/16] bg-dark"
+                    >
+                      <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full bg-gradient-to-r from-transparent via-white/15 to-transparent transition-transform duration-1000 ease-out z-20 pointer-events-none" />
+                      <video src={v.url} autoPlay muted loop playsInline className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                      <div className="absolute top-3 inset-x-3 flex justify-between items-center z-20 pointer-events-none">
+                        <span className="px-2.5 py-1 rounded-full bg-gold/90 text-dark text-[8px] font-black uppercase tracking-widest shadow-md backdrop-blur-sm">✦ Proof</span>
+                        <div className="w-7 h-7 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center text-white border border-white/10">
+                          <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="2" width="20" height="20" rx="5" ry="5" /><path d="M16 11.37A4 4 0 1112.63 8 4 4 0 0116 11.37z" /><line x1="17.5" y1="6.5" x2="17.51" y2="6.5" /></svg>
+                        </div>
+                      </div>
+                      {(v.title || v.description) && (
+                        <div className="absolute inset-x-3 bottom-3 z-20">
+                          <div className="bg-black/60 backdrop-blur-md border border-white/10 px-3 py-2.5 rounded-2xl group-hover:border-gold/30 transition-colors duration-300">
+                            {v.title && <p className="text-white font-black text-[10px] leading-snug">{v.title}</p>}
+                            {v.description && <p className="text-gold-pale font-medium text-[9px] mt-0.5 line-clamp-1">{v.description}</p>}
+                          </div>
+                        </div>
+                      )}
+                    </a>
+                  ))}
+              </div>
+            )}
 
             {/* Social pill buttons */}
             <div className="flex flex-wrap gap-3 justify-center">
-              <a href="https://www.instagram.com/ramsetustones/" target="_blank" rel="noopener noreferrer"
+              <a href={settings.social_instagram || "https://www.instagram.com/ramsetustones/"} target="_blank" rel="noopener noreferrer"
                 className="flex items-center gap-2.5 px-6 py-3 rounded-full bg-gradient-to-r from-[#f09433] via-[#dc2743] to-[#bc1888] text-white font-black text-xs uppercase tracking-wider hover:scale-105 hover:shadow-xl transition-all duration-300 shadow-md">
                 <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="2" width="20" height="20" rx="5" ry="5" /><path d="M16 11.37A4 4 0 1112.63 8 4 4 0 0116 11.37z" /><line x1="17.5" y1="6.5" x2="17.51" y2="6.5" /></svg>
                 Instagram
               </a>
-              <a href="#" className="flex items-center gap-2.5 px-6 py-3 rounded-full bg-[#FF0000] text-white font-black text-xs uppercase tracking-wider hover:scale-105 hover:shadow-xl transition-all duration-300 shadow-md">
+              <a href={settings.social_youtube || "#"} target={settings.social_youtube ? "_blank" : undefined} rel="noopener noreferrer" className="flex items-center gap-2.5 px-6 py-3 rounded-full bg-[#FF0000] text-white font-black text-xs uppercase tracking-wider hover:scale-105 hover:shadow-xl transition-all duration-300 shadow-md">
                 <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M23.498 6.163a3.003 3.003 0 00-2.11-2.107C19.528 3.545 12 3.545 12 3.545s-7.528 0-9.388.511a3.002 3.002 0 00-2.11 2.107C0 8.021 0 12 0 12s0 3.979.502 5.837a3.003 3.003 0 002.11 2.107c1.86.511 9.388.511 9.388.511s7.528 0 9.388-.511a3.002 3.002 0 002.11-2.107C24 15.979 24 12 24 12s0-3.979-.502-5.837zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" /></svg>
                 YouTube
               </a>
-              <a href="#" className="flex items-center gap-2.5 px-6 py-3 rounded-full bg-[#1877F2] text-white font-black text-xs uppercase tracking-wider hover:scale-105 hover:shadow-xl transition-all duration-300 shadow-md">
+              <a href={settings.social_facebook || "#"} target={settings.social_facebook ? "_blank" : undefined} rel="noopener noreferrer" className="flex items-center gap-2.5 px-6 py-3 rounded-full bg-[#1877F2] text-white font-black text-xs uppercase tracking-wider hover:scale-105 hover:shadow-xl transition-all duration-300 shadow-md">
                 <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" /></svg>
                 Facebook
               </a>
-              <a href="https://wa.me/919876543210" className="flex items-center gap-2.5 px-6 py-3 rounded-full bg-[#25D366] text-white font-black text-xs uppercase tracking-wider hover:scale-105 hover:shadow-xl transition-all duration-300 shadow-md">
+              <a href={settings.whatsapp_number ? (String(settings.whatsapp_number).startsWith('http') ? String(settings.whatsapp_number) : `https://wa.me/${String(settings.whatsapp_number).replace(/[^0-9]/g, '')}`) : 'https://wa.me/919876543210'} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2.5 px-6 py-3 rounded-full bg-[#25D366] text-white font-black text-xs uppercase tracking-wider hover:scale-105 hover:shadow-xl transition-all duration-300 shadow-md">
                 <FaWhatsapp className="w-4 h-4" />
                 WhatsApp
               </a>
@@ -995,7 +1157,7 @@ export default function Home() {
             <div>
               <span className="text-gold text-xs font-bold tracking-[0.2em] uppercase block mb-1.5 font-sans">✦ Special Devotional Gift</span>
               <h3 className="font-sans font-black text-gold-light text-2xl md:text-3xl tracking-tight leading-tight">Limited Time Devotional Offer!</h3>
-              <p className="text-white/80 font-sans text-xs md:text-sm mt-1.5 font-semibold">Free Sacred Engraving + Free Shipping across India on all orders</p>
+              <p className="text-white/80 font-sans text-xs md:text-sm mt-1.5 font-semibold">Free Sacred Engraving + {settings.shipping_flat_rate === 0 ? 'Free Shipping across India on all orders' : `Free Shipping across India on orders above ₹${settings.shipping_threshold}`}</p>
             </div>
           </div>
 
@@ -1005,9 +1167,6 @@ export default function Home() {
           >
             <ShoppingCart className="w-6 h-6 text-dark" />
             <span>ORDER NOW</span>
-            <svg className="w-4 h-4 text-dark transition-transform duration-300 group-hover:translate-x-1" fill="none" stroke="currentColor" strokeWidth="2.8" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
-            </svg>
           </Link>
         </div>
       </ScrollReveal>
@@ -1085,7 +1244,7 @@ export default function Home() {
         </div>
       </ScrollReveal>
 
-      <ScrollReveal className="relative bg-gradient-to-r from-[#120700] via-[#1A0C02] to-[#0A0400] py-16 border-t border-gold/15 overflow-hidden">
+      <ScrollReveal className="relative bg-gradient-to-r from-[#120700] via-[#1A0C02] to-[#0A0400] pt-8 pb-12 md:py-16 border-t border-gold/15 overflow-hidden">
         {/* Pattern overlays */}
         <div className="absolute inset-0 opacity-[0.02] pointer-events-none" style={{ backgroundImage: 'radial-gradient(#C8860A 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
 
@@ -1105,14 +1264,14 @@ export default function Home() {
           </div>
 
           <div className="flex flex-col lg:flex-row gap-4 w-full lg:w-auto items-center justify-center">
-            <form className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto" onSubmit={handleSubscribe}>
-              <div className="relative w-full sm:w-72">
+            <form className="flex flex-row gap-2 w-full max-w-md sm:w-auto" onSubmit={handleSubscribe}>
+              <div className="relative flex-grow sm:w-72">
                 <input
                   type="email"
                   placeholder="Enter your email address"
                   value={email}
                   onChange={e => setEmail(e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 text-white rounded-full pl-5 pr-12 py-3.5 outline-none focus:border-gold focus:ring-1 focus:ring-gold/30 placeholder:text-white/40 text-sm font-sans transition-all duration-300"
+                  className="w-full bg-white/5 border border-white/10 text-white rounded-full pl-5 pr-12 py-3.5 outline-none focus:border-gold focus:ring-1 focus:ring-gold/30 placeholder:text-white/40 text-xs sm:text-sm font-sans transition-all duration-300"
                   required
                 />
                 {/* Mail Icon */}
@@ -1122,7 +1281,7 @@ export default function Home() {
               </div>
               <button
                 type="submit"
-                className="w-full sm:w-auto bg-gradient-to-r from-gold to-gold-light hover:from-gold-light hover:to-gold text-dark font-black rounded-full px-8 py-3.5 transition-all duration-300 text-xs sm:text-sm font-sans uppercase tracking-wider hover:shadow-[0_0_20px_rgba(200,134,10,0.35)] hover:-translate-y-0.5 flex justify-center cursor-pointer"
+                className="shrink-0 bg-gradient-to-r from-gold to-gold-light hover:from-gold-light hover:to-gold text-dark font-black rounded-full px-6 py-3.5 transition-all duration-300 text-xs font-sans uppercase tracking-wider hover:shadow-[0_0_20px_rgba(200,134,10,0.35)] hover:-translate-y-0.5 flex justify-center cursor-pointer"
               >
                 Subscribe
               </button>
@@ -1130,7 +1289,7 @@ export default function Home() {
 
             {/* WhatsApp Capsule */}
             <a
-              href="https://wa.me/919876543210"
+              href={settings.whatsapp_number ? (String(settings.whatsapp_number).startsWith('http') ? String(settings.whatsapp_number) : `https://wa.me/${String(settings.whatsapp_number).replace(/[^0-9]/g, '')}`) : 'https://wa.me/919876543210'}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center justify-center gap-2 px-5 py-3.5 bg-green-500/10 border border-green-500/20 text-green-400 hover:bg-green-500/25 hover:border-green-500/40 rounded-full transition-all duration-300 text-xs font-bold w-full sm:w-auto"

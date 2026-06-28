@@ -5,10 +5,10 @@ import toast from 'react-hot-toast'
 import { useCart } from '../context/CartContext'
 import { useAuth } from '../context/AuthContext'
 import { createOrder, createOrderItems, supabase } from '../lib/supabase'
-import { Ticket, ShieldAlert, Lock, CreditCard, ShoppingBag, Truck, ChevronLeft } from 'lucide-react'
+import { Ticket, ShieldAlert, Lock, CreditCard, ShoppingBag, Truck, ChevronLeft, Plus, Minus } from 'lucide-react'
 
 export default function Checkout() {
-  const { items, cartTotal, clearCart } = useCart()
+  const { items, cartTotal, clearCart, updateQty } = useCart()
   const { user } = useAuth()
   const navigate = useNavigate()
 
@@ -26,6 +26,7 @@ export default function Checkout() {
   const [isProcessingCod, setIsProcessingCod] = useState(false)
   const [isProcessingOnline, setIsProcessingOnline] = useState(false)
   const [isOrderCompleted, setIsOrderCompleted] = useState(false)
+  const [logoUrl, setLogoUrl] = useState('')
 
   // Configuration settings (loaded dynamically from database/local storage)
   const [settings, setSettings] = useState({
@@ -82,6 +83,12 @@ export default function Checkout() {
     }
 
     loadSettings()
+
+    // Fetch Site Logo URL for Razorpay
+    supabase.from('site_media').select('url').eq('media_key', 'site_logo').single()
+      .then(({ data }) => {
+        if (data && data.url) setLogoUrl(data.url)
+      })
   }, [])
 
   // Load Razorpay checkout script dynamically
@@ -148,6 +155,41 @@ export default function Checkout() {
     }
   }
 
+  function validateCheckoutForm() {
+    if (!form.full_name || !form.full_name.trim()) {
+      toast.error('Please enter your full name')
+      return false
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!form.email || !emailRegex.test(form.email.trim())) {
+      toast.error('Please enter a valid email address')
+      return false
+    }
+    const cleanPhone = (form.phone || '').replace(/\D/g, '')
+    if (cleanPhone.length !== 10) {
+      toast.error('Please enter a valid 10-digit mobile number')
+      return false
+    }
+    if (!form.address || !form.address.trim()) {
+      toast.error('Please enter your shipping address')
+      return false
+    }
+    if (!form.city || !form.city.trim()) {
+      toast.error('Please enter your city')
+      return false
+    }
+    if (!form.state || !form.state.trim()) {
+      toast.error('Please enter your state')
+      return false
+    }
+    const cleanPincode = (form.pincode || '').replace(/\D/g, '')
+    if (cleanPincode.length !== 6) {
+      toast.error('Please enter a valid 6-digit pincode')
+      return false
+    }
+    return true
+  }
+
   // Place Cash on Delivery order
   async function handleCOD(e) {
     e.preventDefault()
@@ -162,10 +204,7 @@ export default function Checkout() {
     if (items.length === 0) { toast.error('Your cart is empty'); return }
     
     // Validate form
-    if (!form.full_name || !form.email || !form.phone || !form.address || !form.city || !form.state || !form.pincode) {
-      toast.error('Please fill in all address fields')
-      return
-    }
+    if (!validateCheckoutForm()) return
 
     setLoading(true)
     setIsProcessingCod(true)
@@ -215,10 +254,7 @@ export default function Checkout() {
     if (items.length === 0) { toast.error('Your cart is empty'); return }
     
     // Validate form
-    if (!form.full_name || !form.email || !form.phone || !form.address || !form.city || !form.state || !form.pincode) {
-      toast.error('Please fill in all address fields')
-      return
-    }
+    if (!validateCheckoutForm()) return
 
     if (!window.Razorpay) {
       toast.error('Razorpay SDK failed to load. Please check your internet connection.')
@@ -246,6 +282,7 @@ export default function Checkout() {
         currency: 'INR',
         name: 'RamSetu Divine Stones',
         description: `Order for ${items.length} item(s)`,
+        image: logoUrl || undefined,
         order_id: orderId,
         prefill: { name: form.full_name, email: form.email, contact: form.phone },
         theme: { color: '#C8860A' },
@@ -471,7 +508,29 @@ export default function Checkout() {
                         <img src={i.image} alt={i.name} className="w-12 h-12 rounded-xl object-cover border border-gold/10 shadow-sm shrink-0" />
                         <div>
                           <span className="block font-bold text-dark text-sm leading-tight">{i.name}</span>
-                          <span className="text-gray-400 text-xs font-semibold">Qty: {i.qty}</span>
+                          <div className="flex items-center gap-2 mt-1.5 text-xs text-gray-400 font-semibold">
+                            <span>Qty:</span>
+                            <div className="flex items-center gap-2 bg-cream2/60 border border-gold/10 px-2 py-0.5 rounded-lg">
+                              <button
+                                type="button"
+                                onClick={() => i.qty > 1 && updateQty(i.id, i.qty - 1)}
+                                disabled={i.qty <= 1}
+                                className="text-gray-400 hover:text-gold transition-colors focus:outline-none cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+                                aria-label="Decrease quantity"
+                              >
+                                <Minus className="w-3 h-3" />
+                              </button>
+                              <span className="text-dark text-xs font-bold w-4 text-center select-none">{i.qty}</span>
+                              <button
+                                type="button"
+                                onClick={() => updateQty(i.id, i.qty + 1)}
+                                className="text-gray-400 hover:text-gold transition-colors focus:outline-none cursor-pointer"
+                                aria-label="Increase quantity"
+                              >
+                                <Plus className="w-3 h-3" />
+                              </button>
+                            </div>
+                          </div>
                         </div>
                       </div>
                       <span className="font-bold text-dark text-sm">₹{Math.round(i.price * i.qty)}</span>
@@ -572,7 +631,7 @@ export default function Checkout() {
                         disabled={loading}
                         className="group w-full h-12 bg-gold hover:bg-dark text-dark hover:text-gold border border-gold/30 rounded-xl font-bold text-xs uppercase tracking-widest shadow-[0_8px_24px_-8px_rgba(200,134,10,0.3)] hover:shadow-[0_10px_32px_-6px_rgba(200,134,10,0.4)] hover:scale-[1.01] active:scale-[0.99] transition-all duration-300 cursor-pointer flex items-center justify-center gap-2 mt-1 font-sans disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        <CreditCard className="w-4 h-4" /> {isProcessingOnline ? 'Processing…' : `Pay Online (includes ₹${Math.round(shipping)} shipping) — ₹${Math.round(total)}`}
+                        <CreditCard className="w-4 h-4" /> {isProcessingOnline ? 'Processing…' : `Pay Online — ₹${Math.round(total)}`}
                       </button>
                     )}
 

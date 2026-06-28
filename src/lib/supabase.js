@@ -87,6 +87,27 @@ export async function createOrder(orderData) {
 export async function createOrderItems(items) {
   const { error } = await supabase.from('order_items').insert(items)
   if (error) throw error
+
+  // Decrement stock for each item ordered
+  for (const item of items) {
+    try {
+      const { data: product, error: getError } = await supabase
+        .from('products')
+        .select('stock')
+        .eq('id', item.product_id)
+        .single()
+      
+      if (!getError && product) {
+        const newStock = Math.max(0, (product.stock || 0) - item.qty)
+        await supabase
+          .from('products')
+          .update({ stock: newStock })
+          .eq('id', item.product_id)
+      }
+    } catch (e) {
+      console.error('Failed to decrement stock for product:', item.product_id, e)
+    }
+  }
 }
 
 export async function getMyOrders(userId) {

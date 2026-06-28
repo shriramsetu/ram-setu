@@ -4,15 +4,15 @@ import { Helmet } from 'react-helmet-async'
 import toast from 'react-hot-toast'
 import { useAuth } from '../context/AuthContext'
 import { getMyOrders, primaryImage, createReview, supabase } from '../lib/supabase'
-import { 
-  Package, 
-  Calendar, 
-  CreditCard, 
-  Clock, 
-  CheckCircle2, 
-  Truck, 
-  AlertCircle, 
-  ChevronRight, 
+import {
+  Package,
+  Calendar,
+  CreditCard,
+  Clock,
+  CheckCircle2,
+  Truck,
+  AlertCircle,
+  ChevronRight,
   ArrowLeft,
   ShoppingBag,
   CircleDot,
@@ -272,8 +272,8 @@ export default function MyOrders() {
 
       <div className="bg-gradient-to-b from-cream2 via-[#fdfbf7] to-cream2 min-h-screen py-16 md:py-24 font-sans text-left relative overflow-hidden">
         {/* Dotted grid overlay */}
-        <div 
-          className="absolute inset-0 opacity-[0.03] pointer-events-none" 
+        <div
+          className="absolute inset-0 opacity-[0.03] pointer-events-none"
           style={{ backgroundImage: 'radial-gradient(circle, #B8893A 1px, transparent 1px)', backgroundSize: '30px 30px' }}
         />
 
@@ -282,7 +282,7 @@ export default function MyOrders() {
         <div className="absolute bottom-1/4 left-1/4 w-96 h-96 bg-gold/5 rounded-full blur-[100px] pointer-events-none" />
 
         <div className="max-w-4xl mx-auto px-4 md:px-8 relative z-10">
-          
+
           {/* Section Header */}
           <div className="border-b border-gold/15 pb-6 mb-12 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
@@ -300,11 +300,10 @@ export default function MyOrders() {
               <button
                 type="button"
                 onClick={() => setSelectedStatus('all')}
-                className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all duration-300 border whitespace-nowrap cursor-pointer ${
-                  selectedStatus === 'all'
+                className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all duration-300 border whitespace-nowrap cursor-pointer ${selectedStatus === 'all'
                     ? 'bg-gold border-gold text-dark shadow-md scale-102'
                     : 'bg-white border-gold/10 text-gray-400 hover:text-dark hover:border-gold/25'
-                }`}
+                  }`}
               >
                 All Orders ({orders.length})
               </button>
@@ -316,11 +315,10 @@ export default function MyOrders() {
                     key={status}
                     type="button"
                     onClick={() => setSelectedStatus(status)}
-                    className={`px-4 py-2.5 rounded-xl text-xs font-bold capitalize transition-all duration-300 border whitespace-nowrap cursor-pointer ${
-                      selectedStatus === status
+                    className={`px-4 py-2.5 rounded-xl text-xs font-bold capitalize transition-all duration-300 border whitespace-nowrap cursor-pointer ${selectedStatus === status
                         ? 'bg-gold border-gold text-dark shadow-md scale-102'
                         : 'bg-white border-gold/10 text-gray-400 hover:text-dark hover:border-gold/25'
-                    }`}
+                      }`}
                   >
                     {STATUS_CONFIG[status]?.label} ({count})
                   </button>
@@ -339,8 +337,8 @@ export default function MyOrders() {
               <p className="text-gray-500 text-sm mb-8 leading-relaxed max-w-xs mx-auto">
                 Bring home the positive vibrations of Ram Setu. Sourced from Rameswaram, hand-consecrated.
               </p>
-              <Link 
-                to="/shop" 
+              <Link
+                to="/shop"
                 className="inline-flex items-center gap-2 px-8 py-4 rounded-xl bg-gold hover:bg-dark text-dark hover:text-gold border border-gold/20 hover:border-gold/30 font-bold text-xs uppercase tracking-widest shadow-lg transition-all duration-300"
               >
                 Shop Now <ChevronRight className="w-4 h-4" />
@@ -352,7 +350,7 @@ export default function MyOrders() {
                 const filteredOrders = selectedStatus === 'all'
                   ? orders
                   : orders.filter(o => (o.order_status || 'pending') === selectedStatus)
-                
+
                 return filteredOrders.map(order => {
                   const status = order.order_status || 'pending'
                   const statusConfig = STATUS_CONFIG[status] || STATUS_CONFIG.pending
@@ -383,13 +381,13 @@ export default function MyOrders() {
                   }
 
                   return (
-                    <div 
-                      key={order.id} 
+                    <div
+                      key={order.id}
                       onClick={() => toggleExpand(order.id)}
                       className="bg-white rounded-[2rem] border border-gold/15 p-5 sm:p-7 shadow-md hover:shadow-xl hover:border-gold/30 transition-all duration-300 relative overflow-hidden cursor-pointer"
                     >
                       <div className="absolute top-0 right-0 w-32 h-32 bg-gold/5 rounded-full blur-2xl pointer-events-none" />
-                      
+
                       {/* Card Header Info */}
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-gray-100 mb-6">
                         <div className="flex items-center gap-3">
@@ -480,7 +478,7 @@ export default function MyOrders() {
                       {/* EXPANDED AREA FOR FULL DETAILS */}
                       {isExpanded && (
                         <div className="mt-6 pt-6 border-t border-dashed border-gray-200 grid grid-cols-1 md:grid-cols-2 gap-6 relative z-10 text-left">
-                          
+
                           {/* Shipping Details */}
                           <div className="bg-cream2/20 border border-gold/10 p-5 rounded-2xl">
                             <div className="flex items-center gap-2 text-xs font-bold uppercase text-gold tracking-wider mb-3">
@@ -558,35 +556,35 @@ export default function MyOrders() {
                               Order Progress Tracker
                             </div>
                             <div className="flex items-center justify-between relative pl-2 pr-2">
-                              {/* Horizontal track line */}
-                              <div className="absolute left-8 right-8 top-4 h-[2px] bg-gray-100 -z-10" />
-                              <div 
-                                className={`absolute left-8 top-4 h-[2px] bg-gold -z-10 transition-all duration-500`}
-                                style={{
-                                  width: status === 'cancelled' 
-                                    ? '100%' 
-                                    : status === 'pending'
-                                      ? '0%'
-                                      : status === 'confirmed' || status === 'processing'
-                                        ? '33.3%'
-                                        : status === 'shipped'
-                                          ? '66.6%'
-                                          : '100%'
-                                }}
-                              />
+                              {/* Horizontal track line wrapper */}
+                              <div className="absolute left-[12.5%] right-[12.5%] top-4 h-[2px] bg-gray-100 -z-10">
+                                <div
+                                  className="h-full bg-gold transition-all duration-500"
+                                  style={{
+                                    width: status === 'cancelled'
+                                      ? '100%'
+                                      : status === 'pending'
+                                        ? '0%'
+                                        : status === 'confirmed' || status === 'processing'
+                                          ? '33.33%'
+                                          : status === 'shipped'
+                                            ? '66.66%'
+                                            : '100%'
+                                  }}
+                                />
+                              </div>
 
                               {getTimelineSteps().map((step, idx) => (
                                 <div key={idx} className="flex flex-col items-center flex-1">
-                                  <div 
-                                    className={`w-8 h-8 rounded-full flex items-center justify-center border-2 transition-all duration-300 ${
-                                      step.error 
+                                  <div
+                                    className={`w-8 h-8 rounded-full flex items-center justify-center border-2 transition-all duration-300 ${step.error
                                         ? 'bg-rose-50 border-rose-500 text-rose-500'
                                         : step.active
                                           ? 'bg-gold border-gold text-dark animate-pulse shadow-md scale-110'
                                           : step.done
                                             ? 'bg-gold border-gold text-dark'
                                             : 'bg-white border-gray-200 text-gray-300'
-                                    }`}
+                                      }`}
                                   >
                                     {step.error ? (
                                       <AlertCircle className="w-4 h-4" />
@@ -596,15 +594,14 @@ export default function MyOrders() {
                                       <span className="text-[10px] font-black">{idx + 1}</span>
                                     )}
                                   </div>
-                                  <span className={`text-[10px] font-bold mt-2 uppercase tracking-wider ${
-                                    step.error
+                                  <span className={`text-[10px] font-bold mt-2 uppercase tracking-wider ${step.error
                                       ? 'text-rose-600'
                                       : step.active
                                         ? 'text-gold'
                                         : step.done
                                           ? 'text-dark font-black'
                                           : 'text-gray-400'
-                                  }`}>
+                                    }`}>
                                     {step.name}
                                   </span>
                                 </div>
@@ -642,8 +639,8 @@ export default function MyOrders() {
 
       {/* Review Modal */}
       {reviewModalOpen && reviewProduct && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-dark/60 backdrop-blur-sm animate-fade-in">
-          <div className="relative w-full max-w-lg bg-white rounded-[2.5rem] border border-gold/20 shadow-2xl overflow-hidden p-6 sm:p-8 animate-scale-up text-left">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-dark/60 backdrop-blur-sm animate-fade-in">
+          <div className="relative w-full max-w-lg bg-white rounded-[2rem] sm:rounded-[2.5rem] border border-gold/20 shadow-2xl p-5 sm:p-8 animate-scale-up text-left max-h-[92vh] overflow-y-auto no-scrollbar">
             {/* Background elements */}
             <div className="absolute top-0 right-0 w-32 h-32 bg-gold/5 rounded-full blur-2xl pointer-events-none" />
             <div className="absolute bottom-0 left-0 w-32 h-32 bg-gold/5 rounded-full blur-2xl pointer-events-none" />
@@ -686,9 +683,8 @@ export default function MyOrders() {
                         className="p-1 focus:outline-none transition-transform hover:scale-125 bg-transparent border-none cursor-pointer"
                       >
                         <Star
-                          className={`w-8 h-8 transition-colors duration-200 ${
-                            isFilled ? 'text-gold fill-current' : 'text-gray-200'
-                          }`}
+                          className={`w-8 h-8 transition-colors duration-200 ${isFilled ? 'text-gold fill-current' : 'text-gray-200'
+                            }`}
                         />
                       </button>
                     )

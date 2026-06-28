@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Helmet } from 'react-helmet-async'
 import { Link } from 'react-router-dom'
 import toast from 'react-hot-toast'
@@ -9,6 +9,33 @@ import { supabase } from '../lib/supabase'
 export default function Contact() {
   const [form, setForm] = useState({ name: '', email: '', phone: '', subject: '', message: '' })
   const [loading, setLoading] = useState(false)
+  const [settings, setSettings] = useState({
+    whatsapp_number: '919876543210',
+    contact_email: 'info@ramsetudivinestones.com',
+    contact_location: 'Ayodhya Dham, Uttar Pradesh, India',
+    contact_hours: 'Mon – Sat: 9:00 AM – 7:00 PM'
+  })
+
+  useEffect(() => {
+    async function loadSettings() {
+      try {
+        const { data, error } = await supabase.from('site_settings').select('*')
+        const loaded = {}
+        if (!error && data && data.length > 0) {
+          data.forEach(item => {
+            loaded[item.key] = item.value
+          })
+        }
+        const local = localStorage.getItem('admin_settings')
+        const localParsed = local ? JSON.parse(local) : {}
+        setSettings(prev => ({ ...prev, ...localParsed, ...loaded }))
+      } catch {
+        const local = localStorage.getItem('admin_settings')
+        if (local) setSettings(JSON.parse(local))
+      }
+    }
+    loadSettings()
+  }, [])
 
   function handleChange(e) {
     setForm(f => ({ ...f, [e.target.name]: e.target.value }))
@@ -161,7 +188,6 @@ export default function Contact() {
                   >
                     <Send className="w-4 h-4" /> 
                     {loading ? 'Sending Request...' : 'Send Inquiry'}
-                    <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
                   </button>
                 </form>
               </div>
@@ -192,10 +218,10 @@ export default function Contact() {
 
                 <div className="space-y-6">
                   {[
-                    { icon: Phone, label: 'Call Support', value: '+91 98765 43210' },
-                    { icon: Mail, label: 'Email Address', value: 'info@ramsetudivinestones.com' },
-                    { icon: MapPin, label: 'Main Office', value: 'Ayodhya Dham, Uttar Pradesh, India' },
-                    { icon: Clock, label: 'Service Hours', value: 'Mon – Sat: 9:00 AM – 7:00 PM' },
+                    { icon: Phone, label: 'Call / WhatsApp Support', value: settings.whatsapp_number ? (String(settings.whatsapp_number).startsWith('http') ? 'WhatsApp Support' : String(settings.whatsapp_number)) : '+91 98765 43210' },
+                    { icon: Mail, label: 'Email Address', value: settings.contact_email || 'info@ramsetudivinestones.com' },
+                    { icon: MapPin, label: 'Main Office', value: settings.contact_location || 'Ayodhya Dham, Uttar Pradesh, India' },
+                    { icon: Clock, label: 'Service Hours', value: settings.contact_hours || 'Mon – Sat: 9:00 AM – 7:00 PM' },
                   ].map((c, idx) => (
                     <div key={idx} className="flex gap-4 items-center group/item">
                       <div className="p-3 bg-cream2 text-gold rounded-xl border border-gold/15 shrink-0 group-hover/item:bg-gold group-hover/item:text-dark transition-all duration-300">
@@ -212,7 +238,7 @@ export default function Contact() {
 
               <div className="pt-8 border-t border-gold/10 mt-10">
                 <a
-                  href="https://wa.me/919876543210?text=Hello! I have a query about Ram Setu Divine Stones."
+                  href={settings.whatsapp_number ? (String(settings.whatsapp_number).startsWith('http') ? String(settings.whatsapp_number) : `https://wa.me/${String(settings.whatsapp_number).replace(/[^0-9]/g, '')}?text=Hello! I have a query about Ram Setu Divine Stones.`) : 'https://wa.me/919876543210?text=Hello! I have a query about Ram Setu Divine Stones.'}
                   className="inline-flex w-full sm:w-auto px-8 py-4 rounded-xl bg-[#25D366] text-white font-bold text-xs uppercase tracking-wider shadow-lg hover:shadow-green-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 items-center justify-center gap-2 cursor-pointer"
                   target="_blank"
                   rel="noopener noreferrer"

@@ -10,6 +10,8 @@ import {
   Users as UsersIcon,
   Tag,
   Settings as SettingsIcon,
+  Video,
+  Image as ImageIcon,
   LogOut,
   Globe,
   Plus,
@@ -28,7 +30,7 @@ import {
   Phone,
   MapPin,
   Calendar,
-  DollarSign,
+  IndianRupee,
   Percent,
   Search,
   Loader2,
@@ -39,6 +41,10 @@ import {
 export default function Dashboard() {
   const { user, isAdmin, loading, signOut } = useAuth()
   const navigate = useNavigate()
+  const handleLogout = async () => {
+    await signOut()
+    navigate('/')
+  }
   const [tab, setTab] = useState('dashboard')
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
@@ -50,15 +56,24 @@ export default function Dashboard() {
   const [categoriesList, setCategoriesList] = useState([])
   const [contacts, setContacts] = useState([])
   const [adminReviews, setAdminReviews] = useState([])
+  const [siteMedia, setSiteMedia] = useState([])
+  const [logoUrl, setLogoUrl] = useState('')
+  const [uploadingMediaKey, setUploadingMediaKey] = useState(null)
+  const [editingMediaItem, setEditingMediaItem] = useState(null)
 
   // Settings States
   const [settings, setSettings] = useState({
     shipping_threshold: 499,
     shipping_flat_rate: 79,
-    razorpay_key_id: '',
-    razorpay_key_secret: '',
     enable_razorpay: true,
-    enable_cod: true
+    enable_cod: true,
+    social_instagram: '',
+    social_youtube: '',
+    social_facebook: '',
+    whatsapp_number: '919876543210',
+    contact_email: 'info@ramsetudivinestones.com',
+    contact_location: 'Ayodhya Dham, UP, India',
+    contact_hours: 'Mon–Sat: 9:00 AM – 7:00 PM'
   })
 
   // UI States
@@ -73,6 +88,9 @@ export default function Dashboard() {
   const [couponDiscount, setCouponDiscount] = useState('')
   const [couponType, setCouponType] = useState('percent') // 'percent' | 'flat'
   const [searchQuery, setSearchQuery] = useState('')
+  const [orderStatusFilter, setOrderStatusFilter] = useState('all')
+  const [paymentStatusFilter, setPaymentStatusFilter] = useState('all')
+  const [paymentMethodFilter, setPaymentMethodFilter] = useState('all')
 
   // Route protection
   useEffect(() => {
@@ -80,6 +98,16 @@ export default function Dashboard() {
       navigate('/login')
     }
   }, [user, isAdmin, loading])
+
+  // Fetch site logo for header
+  useEffect(() => {
+    if (user && isAdmin) {
+      supabase.from('site_media').select('url').eq('media_key', 'site_logo').single()
+        .then(({ data }) => {
+          if (data && data.url) setLogoUrl(data.url)
+        })
+    }
+  }, [user, isAdmin])
 
   // Load all tab data when tab changes or initially
   useEffect(() => {
@@ -109,6 +137,8 @@ export default function Dashboard() {
         await fetchContacts()
       } else if (tab === 'reviews') {
         await fetchAllReviews()
+      } else if (tab === 'media') {
+        await fetchSiteMedia()
       }
     } catch (err) {
       console.error('Error loading admin data:', err)
@@ -166,9 +196,9 @@ export default function Dashboard() {
   }
 
   async function openEditProduct(p) {
-    setForm({ 
-      ...p, 
-      product_images: p.product_images ? [...p.product_images] : [] 
+    setForm({
+      ...p,
+      product_images: p.product_images ? [...p.product_images] : []
     })
     setModal('edit')
     // Fetch SEO details from site_settings
@@ -447,6 +477,29 @@ export default function Dashboard() {
     }
   }
 
+  async function handleReviewHomeToggle(reviewId, currentVal) {
+    const newVal = !currentVal
+    if (newVal === true) {
+      const currentCount = adminReviews.filter(r => r.show_on_home === true).length
+      if (currentCount >= 5) {
+        toast.error('Maximum 5 reviews allowed on Homepage! Uncheck another review first.')
+        return
+      }
+    }
+
+    const { error } = await supabase
+      .from('reviews')
+      .update({ show_on_home: newVal })
+      .eq('id', reviewId)
+
+    if (error) {
+      toast.error('Failed to update review status')
+    } else {
+      toast.success('Review homepage status updated!')
+      setAdminReviews(prev => prev.map(r => r.id === reviewId ? { ...r, show_on_home: newVal } : r))
+    }
+  }
+
   // ─── Users Logic ───
   async function fetchUsers() {
     const { data, error } = await supabase
@@ -598,6 +651,13 @@ export default function Dashboard() {
         { key: 'shipping_charge', value: String(settings.shipping_flat_rate) },
         { key: 'razorpay_enabled', value: String(settings.enable_razorpay) },
         { key: 'cod_enabled', value: String(settings.enable_cod) },
+        { key: 'social_instagram', value: String(settings.social_instagram || '') },
+        { key: 'social_youtube', value: String(settings.social_youtube || '') },
+        { key: 'social_facebook', value: String(settings.social_facebook || '') },
+        { key: 'whatsapp_number', value: String(settings.whatsapp_number || '') },
+        { key: 'contact_email', value: String(settings.contact_email || '') },
+        { key: 'contact_location', value: String(settings.contact_location || '') },
+        { key: 'contact_hours', value: String(settings.contact_hours || '') },
       ]
 
       const { error } = await supabase
@@ -609,6 +669,227 @@ export default function Dashboard() {
     } catch (err) {
       console.error('Supabase settings save failed:', err)
       toast.error(`Database Error: ${err.message || 'Permission Denied'}. Settings saved locally instead!`)
+    }
+  }
+
+  async function fetchSiteMedia() {
+    try {
+      const { data, error } = await supabase.from('site_media').select('*').order('media_key')
+      if (!error && data) {
+        setSiteMedia(data)
+      }
+    } catch (err) {
+      console.error('Failed to fetch site media:', err)
+    }
+  }
+
+  const toBase64Helper = file => new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.readAsDataURL(file)
+    reader.onload = () => resolve(reader.result)
+    reader.onerror = error => reject(error)
+  })
+
+  async function handleMediaUpload(e, mediaKey, isNew = false, mediaType = 'image') {
+    const file = e.target.files[0]
+    if (!file) return
+    const keyToUse = isNew ? `${mediaType === 'video' ? 'proof_video' : 'gallery_img'}_${Date.now()}` : mediaKey
+    setUploadingMediaKey(keyToUse)
+    try {
+      const base64 = await toBase64Helper(file)
+      const resource_type = file.type.startsWith('video') ? 'video' : 'auto'
+      const res = await fetch('/.netlify/functions/cloudinary-upload', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: base64, resource_type })
+      })
+      if (!res.ok) {
+        const contentType = res.headers.get('content-type')
+        if (contentType && contentType.includes('application/json')) {
+          const errData = await res.json()
+          throw new Error(errData.error || 'Cloudinary upload failed')
+        } else {
+          const errText = await res.text()
+          throw new Error(errText || `Upload failed with status ${res.status}`)
+        }
+      }
+      const data = await res.json()
+      const newUrl = data.url
+
+      const existing = siteMedia.find(m => m.media_key === keyToUse)
+      const title = (editingMediaItem && editingMediaItem.title !== undefined) ? editingMediaItem.title : (existing ? existing.title : '')
+      const description = (editingMediaItem && editingMediaItem.description !== undefined) ? editingMediaItem.description : (existing ? (existing.description || '') : '')
+      const actual_type = file.type.startsWith('video') ? 'video' : 'image'
+
+      const show_on_home = (editingMediaItem && editingMediaItem.show_on_home !== undefined) ? editingMediaItem.show_on_home : (existing ? (existing.show_on_home ?? false) : false)
+
+      const { error } = await supabase
+        .from('site_media')
+        .upsert({
+          media_key: keyToUse,
+          media_type: actual_type,
+          title,
+          description,
+          show_on_home,
+          url: newUrl,
+          updated_at: new Date().toISOString()
+        }, { onConflict: 'media_key' })
+      if (error) throw error
+
+      toast.success('Media uploaded to Cloudinary & saved!')
+      await fetchSiteMedia()
+    } catch (err) {
+      console.error(err)
+      toast.error(`Upload failed: ${err.message}`)
+    } finally {
+      setUploadingMediaKey(null)
+      e.target.value = ''
+    }
+  }
+
+  async function handleMediaUpdate(mediaKey, fields) {
+    try {
+      const existing = siteMedia.find(m => m.media_key === mediaKey)
+      if (!existing) return false
+
+      if (fields.show_on_home === true && existing.show_on_home !== true) {
+        if (existing.media_type === 'image') {
+          const currentCount = siteMedia.filter(m => m.media_type === 'image' && m.media_key !== 'site_logo' && m.media_key !== 'story_img' && m.show_on_home === true).length
+          if (currentCount >= 4) {
+            toast.error('Maximum 4 photos allowed on Homepage! Uncheck another photo first.')
+            return false
+          }
+        } else if (existing.media_type === 'video') {
+          const currentCount = siteMedia.filter(m => m.media_type === 'video' && m.media_key !== 'hero_video' && m.show_on_home === true).length
+          if (currentCount >= 2) {
+            toast.error('Maximum 2 videos allowed on Homepage! Uncheck another video first.')
+            return false
+          }
+        }
+      }
+
+      const updatedRow = {
+        ...existing,
+        ...fields,
+        updated_at: new Date().toISOString()
+      }
+      const { error } = await supabase
+        .from('site_media')
+        .upsert(updatedRow, { onConflict: 'media_key' })
+      if (error) throw error
+      toast.success('Saved!')
+      await fetchSiteMedia()
+      return true
+    } catch (err) {
+      toast.error('Failed to save details')
+      return false
+    }
+  }
+
+  async function handleModalFileUpload(e) {
+    const file = e.target.files[0]
+    if (!file || !editingMediaItem) return
+    const isNew = editingMediaItem.isNew
+    const mediaType = editingMediaItem.media_type || 'image'
+    const keyToUse = (isNew && !editingMediaItem.media_key)
+      ? `${mediaType === 'video' ? 'proof_video' : 'gallery_img'}_${Date.now()}`
+      : (editingMediaItem.media_key || `${mediaType === 'video' ? 'proof_video' : 'gallery_img'}_${Date.now()}`)
+
+    setUploadingMediaKey(keyToUse)
+    try {
+      const base64 = await toBase64Helper(file)
+      const resource_type = file.type.startsWith('video') ? 'video' : 'auto'
+      const res = await fetch('/.netlify/functions/cloudinary-upload', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: base64, resource_type })
+      })
+      if (!res.ok) {
+        const contentType = res.headers.get('content-type')
+        if (contentType && contentType.includes('application/json')) {
+          const errData = await res.json()
+          throw new Error(errData.error || 'Cloudinary upload failed')
+        } else {
+          const errText = await res.text()
+          throw new Error(errText || `Upload failed with status ${res.status}`)
+        }
+      }
+      const data = await res.json()
+      const newUrl = data.url
+
+      setEditingMediaItem(prev => ({
+        ...prev,
+        media_key: keyToUse,
+        url: newUrl
+      }))
+      toast.success('File uploaded! Fill in details and click Save.')
+    } catch (err) {
+      console.error(err)
+      toast.error(`Upload failed: ${err.message}`)
+    } finally {
+      setUploadingMediaKey(null)
+      e.target.value = ''
+    }
+  }
+
+  async function handleSaveModalMedia() {
+    if (!editingMediaItem) return
+    if (!editingMediaItem.url) {
+      toast.error('Please select and upload a photo or video file first!')
+      return
+    }
+
+    const { media_key, media_type, title, description, show_on_home, url, isNew } = editingMediaItem
+    const keyToUse = media_key || `${media_type === 'video' ? 'proof_video' : 'gallery_img'}_${Date.now()}`
+
+    if (show_on_home === true) {
+      if (media_type === 'image') {
+        const currentCount = siteMedia.filter(m => m.media_type === 'image' && m.media_key !== 'site_logo' && m.media_key !== 'story_img' && m.media_key !== keyToUse && m.show_on_home === true).length
+        if (currentCount >= 4) {
+          toast.error('Maximum 4 photos allowed on Homepage! Uncheck another photo first.')
+          return
+        }
+      } else if (media_type === 'video') {
+        const currentCount = siteMedia.filter(m => m.media_type === 'video' && m.media_key !== 'hero_video' && m.media_key !== keyToUse && m.show_on_home === true).length
+        if (currentCount >= 2) {
+          toast.error('Maximum 2 videos allowed on Homepage! Uncheck another video first.')
+          return
+        }
+      }
+    }
+
+    try {
+      const { error } = await supabase
+        .from('site_media')
+        .upsert({
+          media_key: keyToUse,
+          media_type: media_type || 'image',
+          title: title || '',
+          description: description || '',
+          show_on_home: show_on_home ?? false,
+          url,
+          updated_at: new Date().toISOString()
+        }, { onConflict: 'media_key' })
+      if (error) throw error
+
+      toast.success(isNew ? 'New media added successfully!' : 'Media details saved successfully!')
+      setEditingMediaItem(null)
+      await fetchSiteMedia()
+    } catch (err) {
+      console.error(err)
+      toast.error(`Save failed: ${err.message}`)
+    }
+  }
+
+  async function handleDeleteMedia(mediaKey) {
+    if (!window.confirm('Are you sure you want to delete this media item from website?')) return
+    try {
+      const { error } = await supabase.from('site_media').delete().eq('media_key', mediaKey)
+      if (error) throw error
+      toast.success('Media deleted successfully!')
+      await fetchSiteMedia()
+    } catch (err) {
+      toast.error('Failed to delete media')
     }
   }
 
@@ -628,10 +909,14 @@ export default function Dashboard() {
     p.slug.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
-  const filteredOrders = orders.filter(o =>
-    String(o.id).toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (o.shipping_address?.full_name || '').toLowerCase().includes(searchQuery.toLowerCase())
-  )
+  const filteredOrders = orders.filter(o => {
+    const matchesSearch = String(o.id).toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (o.shipping_address?.full_name || '').toLowerCase().includes(searchQuery.toLowerCase())
+    const matchesOrderStatus = orderStatusFilter === 'all' || (o.order_status || 'pending') === orderStatusFilter
+    const matchesPaymentStatus = paymentStatusFilter === 'all' || (o.payment_status || 'pending') === paymentStatusFilter
+    const matchesPaymentMethod = paymentMethodFilter === 'all' || (o.payment_method || '') === paymentMethodFilter
+    return matchesSearch && matchesOrderStatus && matchesPaymentStatus && matchesPaymentMethod
+  })
 
   return (
     <>
@@ -646,13 +931,23 @@ export default function Dashboard() {
         {/* Modern Light Header */}
         <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-gold/15 px-6 py-4 flex items-center justify-between shadow-[0_2px_20px_-10px_rgba(184,137,58,0.1)]">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gold rounded-xl flex items-center justify-center shadow-md shadow-gold/25">
-              <IconLotus className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <h1 className="font-sans text-lg font-bold text-slate-900 leading-tight">RamSetu Admin</h1>
-              <p className="text-[10px] text-gold font-bold tracking-widest uppercase">Management Portal</p>
-            </div>
+            {logoUrl ? (
+              <div className="flex items-center gap-2.5">
+                <img src={logoUrl} alt="RamSetu Logo" className="w-28 h-10 object-contain object-left" />
+                <div className="h-6 w-[1px] bg-gold/30 hidden sm:block" />
+                <span className="text-[11px] font-black uppercase tracking-widest text-gold mt-1.5 hidden sm:block">Admin Portal</span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-gold rounded-xl flex items-center justify-center shadow-md shadow-gold/25">
+                  <IconLotus className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h1 className="font-sans text-lg font-bold text-slate-900 leading-tight">RamSetu Admin</h1>
+                  <p className="text-[10px] text-gold font-bold tracking-widest uppercase">Management Portal</p>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="flex items-center gap-2 md:gap-4">
@@ -666,7 +961,7 @@ export default function Dashboard() {
 
             {/* Logout Button (Icon only on mobile) */}
             <button
-              onClick={signOut}
+              onClick={handleLogout}
               className="p-2 md:px-3 md:py-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 transition-colors flex items-center gap-1.5 text-xs font-bold border border-transparent cursor-pointer"
               title="Logout"
             >
@@ -697,13 +992,19 @@ export default function Dashboard() {
           <div className={`fixed top-0 right-0 bottom-0 z-[1100] w-72 max-w-[80vw] bg-white border-l border-gold/15 shadow-2xl transition-transform duration-300 ease-in-out transform flex flex-col p-6 gap-6 lg:hidden ${mobileMenuOpen ? 'translate-x-0' : 'translate-x-full'}`}>
             <div className="flex justify-between items-center pb-4 border-b border-gold/15">
               <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 bg-gold rounded-xl flex items-center justify-center shadow-md shadow-gold/25">
-                  <IconLotus className="w-5.5 h-5.5 text-white" />
-                </div>
-                <div className="leading-tight">
-                  <div className="font-sans text-base font-bold text-slate-900">RamSetu Admin</div>
-                  <div className="text-[9px] text-gold font-bold tracking-wider uppercase">Portal Navigation</div>
-                </div>
+                {logoUrl ? (
+                  <img src={logoUrl} alt="RamSetu Logo" className="w-28 h-9 object-contain object-left" />
+                ) : (
+                  <>
+                    <div className="w-9 h-9 bg-gold rounded-xl flex items-center justify-center shadow-md shadow-gold/25">
+                      <IconLotus className="w-5.5 h-5.5 text-white" />
+                    </div>
+                    <div className="leading-tight">
+                      <div className="font-sans text-base font-bold text-slate-900">RamSetu Admin</div>
+                      <div className="text-[9px] text-gold font-bold tracking-wider uppercase">Portal Navigation</div>
+                    </div>
+                  </>
+                )}
               </div>
               <button className="p-2 rounded-xl bg-gold/10 hover:bg-gold/20 text-gold hover:text-dark transition-all duration-300 border-none cursor-pointer flex items-center justify-center" onClick={() => setMobileMenuOpen(false)}>
                 <XCircle className="w-5 h-5" />
@@ -719,6 +1020,7 @@ export default function Dashboard() {
                 { id: 'users', label: 'Customer Accounts', icon: UsersIcon },
                 { id: 'coupons', label: 'Coupons & Promos', icon: Tag },
                 { id: 'contacts', label: 'Contact Inquiries', icon: Mail },
+                { id: 'media', label: 'Site Media & Assets', icon: Video },
                 { id: 'settings', label: 'Portal Settings', icon: SettingsIcon },
               ].map(t => {
                 const IconComp = t.icon
@@ -746,7 +1048,7 @@ export default function Dashboard() {
                   <span>View Site</span>
                 </Link>
                 <button
-                  onClick={() => { signOut(); setMobileMenuOpen(false); }}
+                  onClick={() => { handleLogout(); setMobileMenuOpen(false); }}
                   className="w-full py-3 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 text-center font-bold text-xs uppercase tracking-widest border border-red-200/50 transition-all duration-300 cursor-pointer flex items-center justify-center gap-1.5"
                 >
                   <LogOut className="w-4 h-4" />
@@ -766,6 +1068,7 @@ export default function Dashboard() {
               { id: 'users', label: 'Customer Accounts', icon: UsersIcon },
               { id: 'coupons', label: 'Coupons & Promos', icon: Tag },
               { id: 'contacts', label: 'Contact Inquiries', icon: Mail },
+              { id: 'media', label: 'Site Media & Assets', icon: Video },
               { id: 'settings', label: 'Portal Settings', icon: SettingsIcon },
             ].map(t => {
               const IconComp = t.icon
@@ -814,7 +1117,7 @@ export default function Dashboard() {
                           <span className="text-[9px] text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded font-bold inline-flex items-center gap-0.5 mt-2">✦ Paid &amp; Delivered</span>
                         </div>
                         <div className="w-12 h-12 bg-emerald-500/10 text-emerald-600 rounded-xl flex items-center justify-center group-hover:scale-110 group-hover:bg-emerald-500 group-hover:text-white transition-all duration-300 shadow-inner">
-                          <DollarSign className="w-5.5 h-5.5" />
+                          <IndianRupee className="w-5.5 h-5.5" />
                         </div>
                       </div>
 
@@ -1097,6 +1400,55 @@ export default function Dashboard() {
                       </div>
                     </div>
 
+                    {/* Filters Row */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+                      {/* Order Status Filter */}
+                      <div>
+                        <label className="block text-[10px] font-extrabold uppercase tracking-wider text-slate-400 mb-1.5">Order Status</label>
+                        <select
+                          value={orderStatusFilter}
+                          onChange={e => setOrderStatusFilter(e.target.value)}
+                          className="w-full px-3.5 py-2.5 bg-slate-50 border border-gold/15 focus:border-gold rounded-xl text-xs font-bold outline-none cursor-pointer transition-all text-slate-700"
+                        >
+                          <option value="all">All Statuses</option>
+                          <option value="pending">Pending</option>
+                          <option value="confirmed">Confirmed</option>
+                          <option value="processing">Processing</option>
+                          <option value="shipped">Shipped</option>
+                          <option value="delivered">Delivered</option>
+                          <option value="cancelled">Cancelled</option>
+                        </select>
+                      </div>
+
+                      {/* Payment Status Filter */}
+                      <div>
+                        <label className="block text-[10px] font-extrabold uppercase tracking-wider text-slate-400 mb-1.5">Payment Status</label>
+                        <select
+                          value={paymentStatusFilter}
+                          onChange={e => setPaymentStatusFilter(e.target.value)}
+                          className="w-full px-3.5 py-2.5 bg-slate-50 border border-gold/15 focus:border-gold rounded-xl text-xs font-bold outline-none cursor-pointer transition-all text-slate-700"
+                        >
+                          <option value="all">All Payments</option>
+                          <option value="paid">Paid</option>
+                          <option value="pending">Pending</option>
+                        </select>
+                      </div>
+
+                      {/* Payment Method Filter */}
+                      <div>
+                        <label className="block text-[10px] font-extrabold uppercase tracking-wider text-slate-400 mb-1.5">Payment Method</label>
+                        <select
+                          value={paymentMethodFilter}
+                          onChange={e => setPaymentMethodFilter(e.target.value)}
+                          className="w-full px-3.5 py-2.5 bg-slate-50 border border-gold/15 focus:border-gold rounded-xl text-xs font-bold outline-none cursor-pointer transition-all text-slate-700"
+                        >
+                          <option value="all">All Methods</option>
+                          <option value="cod">📦 COD</option>
+                          <option value="razorpay">💳 Online (Razorpay)</option>
+                        </select>
+                      </div>
+                    </div>
+
                     {/* Search bar */}
                     <div className="relative mb-6">
                       <Search className="w-4.5 h-4.5 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
@@ -1347,7 +1699,7 @@ export default function Dashboard() {
                           <Plus className="w-4.5 h-4.5" />
                           <span>Create New Coupon</span>
                         </h3>
-                        
+
                         <div className="space-y-4 pt-2">
                           <div className="space-y-1">
                             <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 block mb-1.5">Coupon Code *</label>
@@ -1537,8 +1889,85 @@ export default function Dashboard() {
                         </div>
                       </div>
 
-                      {/* Razorpay specific inputs removed for environment security */}
-
+                      {/* Social & Contact Channels */}
+                      <div className="space-y-4 bg-slate-50/50 border border-gold/10 p-6 rounded-2xl">
+                        <h3 className="text-xs font-extrabold uppercase tracking-widest text-gold flex items-center gap-2 pb-2 border-b border-gold/10">
+                          <Globe className="w-4.5 h-4.5" />
+                          <span>Social Links &amp; Contact Channels</span>
+                        </h3>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                          <div className="space-y-1">
+                            <label className="text-[9px] font-bold uppercase tracking-wider text-slate-500 block mb-1">WhatsApp Number / Link</label>
+                            <input
+                              type="text"
+                              value={settings.whatsapp_number || ''}
+                              placeholder="919876543210"
+                              onChange={e => setSettings(s => ({ ...s, whatsapp_number: e.target.value }))}
+                              className="w-full px-3.5 py-2.5 bg-white border border-gold/15 focus:border-gold rounded-xl text-slate-800 text-sm focus:outline-none transition-all font-sans"
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <label className="text-[9px] font-bold uppercase tracking-wider text-slate-500 block mb-1">Support Email</label>
+                            <input
+                              type="email"
+                              value={settings.contact_email || ''}
+                              placeholder="info@ramsetudivinestones.com"
+                              onChange={e => setSettings(s => ({ ...s, contact_email: e.target.value }))}
+                              className="w-full px-3.5 py-2.5 bg-white border border-gold/15 focus:border-gold rounded-xl text-slate-800 text-sm focus:outline-none transition-all font-sans"
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <label className="text-[9px] font-bold uppercase tracking-wider text-slate-500 block mb-1">Instagram URL</label>
+                            <input
+                              type="text"
+                              value={settings.social_instagram || ''}
+                              placeholder="https://instagram.com/..."
+                              onChange={e => setSettings(s => ({ ...s, social_instagram: e.target.value }))}
+                              className="w-full px-3.5 py-2.5 bg-white border border-gold/15 focus:border-gold rounded-xl text-slate-800 text-sm focus:outline-none transition-all font-sans"
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <label className="text-[9px] font-bold uppercase tracking-wider text-slate-500 block mb-1">YouTube URL</label>
+                            <input
+                              type="text"
+                              value={settings.social_youtube || ''}
+                              placeholder="https://youtube.com/..."
+                              onChange={e => setSettings(s => ({ ...s, social_youtube: e.target.value }))}
+                              className="w-full px-3.5 py-2.5 bg-white border border-gold/15 focus:border-gold rounded-xl text-slate-800 text-sm focus:outline-none transition-all font-sans"
+                            />
+                          </div>
+                          <div className="space-y-1 sm:col-span-2">
+                            <label className="text-[9px] font-bold uppercase tracking-wider text-slate-500 block mb-1">Facebook URL</label>
+                            <input
+                              type="text"
+                              value={settings.social_facebook || ''}
+                              placeholder="https://facebook.com/..."
+                              onChange={e => setSettings(s => ({ ...s, social_facebook: e.target.value }))}
+                              className="w-full px-3.5 py-2.5 bg-white border border-gold/15 focus:border-gold rounded-xl text-slate-800 text-sm focus:outline-none transition-all font-sans"
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <label className="text-[9px] font-bold uppercase tracking-wider text-slate-500 block mb-1">Office Location Address</label>
+                            <input
+                              type="text"
+                              value={settings.contact_location || ''}
+                              placeholder="Ayodhya Dham, UP, India"
+                              onChange={e => setSettings(s => ({ ...s, contact_location: e.target.value }))}
+                              className="w-full px-3.5 py-2.5 bg-white border border-gold/15 focus:border-gold rounded-xl text-slate-800 text-sm focus:outline-none transition-all font-sans"
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <label className="text-[9px] font-bold uppercase tracking-wider text-slate-500 block mb-1">Service Available Hours</label>
+                            <input
+                              type="text"
+                              value={settings.contact_hours || ''}
+                              placeholder="Mon–Sat: 9:00 AM – 7:00 PM"
+                              onChange={e => setSettings(s => ({ ...s, contact_hours: e.target.value }))}
+                              className="w-full px-3.5 py-2.5 bg-white border border-gold/15 focus:border-gold rounded-xl text-slate-800 text-sm focus:outline-none transition-all font-sans"
+                            />
+                          </div>
+                        </div>
+                      </div>
 
                       <button type="submit" className="w-full sm:w-auto px-8 py-4 rounded-xl bg-gold hover:bg-dark text-white font-bold text-xs uppercase tracking-wider shadow-[0_8px_20px_-6px_rgba(200,134,10,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 cursor-pointer">
                         Save Configurations
@@ -1671,13 +2100,14 @@ export default function Dashboard() {
                               <th className="px-6 py-4">Rating</th>
                               <th className="px-6 py-4">Review Content</th>
                               <th className="px-6 py-4 text-center">Status</th>
+                              <th className="px-6 py-4 text-center">Featured (Max 5)</th>
                               <th className="px-6 py-4 text-center">Actions</th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-slate-100">
                             {adminReviews.length === 0 ? (
                               <tr>
-                                <td colSpan="6" className="text-center py-8 text-xs text-slate-400 font-bold">
+                                <td colSpan="7" className="text-center py-8 text-xs text-slate-400 font-bold">
                                   No reviews found.
                                 </td>
                               </tr>
@@ -1696,11 +2126,10 @@ export default function Dashboard() {
                                   <td className="px-6 py-4">
                                     <div className="flex gap-0.5 text-gold">
                                       {[...Array(5)].map((_, i) => (
-                                        <Star 
-                                          key={i} 
-                                          className={`w-3.5 h-3.5 ${
-                                            i < r.rating ? 'fill-current' : 'text-gray-200'
-                                          }`} 
+                                        <Star
+                                          key={i}
+                                          className={`w-3.5 h-3.5 ${i < r.rating ? 'fill-current' : 'text-gray-200'
+                                            }`}
                                         />
                                       ))}
                                     </div>
@@ -1715,6 +2144,16 @@ export default function Dashboard() {
                                     ) : (
                                       <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-amber-50 text-amber-700 border border-amber-200/30 rounded-full font-bold text-[9px] uppercase tracking-wider animate-pulse">Pending</span>
                                     )}
+                                  </td>
+                                  <td className="px-6 py-4 text-center">
+                                    <input
+                                      type="checkbox"
+                                      checked={r.show_on_home ?? false}
+                                      disabled={!r.is_approved}
+                                      onChange={() => handleReviewHomeToggle(r.id, r.show_on_home)}
+                                      className="w-4 h-4 text-gold rounded border-slate-300 focus:ring-gold accent-amber-600 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                                      title={!r.is_approved ? "Review must be approved first" : "Show on Home"}
+                                    />
                                   </td>
                                   <td className="px-6 py-4 text-center space-x-2 whitespace-nowrap">
                                     <button
@@ -1775,14 +2214,25 @@ export default function Dashboard() {
 
                               <div className="flex gap-0.5 text-gold">
                                 {[...Array(5)].map((_, i) => (
-                                  <Star 
-                                    key={i} 
-                                    className={`w-3.5 h-3.5 ${
-                                      i < r.rating ? 'fill-current' : 'text-gray-200'
-                                    }`} 
+                                  <Star
+                                    key={i}
+                                    className={`w-3.5 h-3.5 ${i < r.rating ? 'fill-current' : 'text-gray-200'
+                                      }`}
                                   />
                                 ))}
                               </div>
+
+                              {/* Show on Homepage Toggle for Mobile */}
+                              <label className="flex items-center gap-2.5 cursor-pointer select-none pt-1">
+                                <input
+                                  type="checkbox"
+                                  checked={r.show_on_home ?? false}
+                                  disabled={!r.is_approved}
+                                  onChange={() => handleReviewHomeToggle(r.id, r.show_on_home)}
+                                  className="w-4 h-4 text-gold rounded border-slate-300 focus:ring-gold accent-amber-600 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                                />
+                                <span className="text-[11px] font-bold text-slate-700">Show on Homepage (Max 5)</span>
+                              </label>
 
                               <div className="bg-slate-50 p-4 rounded-xl border border-gold/5 text-xs">
                                 {r.title && <div className="font-bold text-slate-800 mb-1.5">{r.title}</div>}
@@ -1818,6 +2268,429 @@ export default function Dashboard() {
                           ))
                         )}
                       </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* ─── 8. Site Media & Assets Tab ─── */}
+                {tab === 'media' && (
+                  <div>
+                    <div className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                      <div>
+                        <h2 className="font-sans text-2xl font-bold tracking-tight text-slate-950">Site Media &amp; Assets Manager</h2>
+                        <p className="text-xs text-slate-500 mt-1">Upload and update website videos &amp; images directly using Cloudinary.</p>
+                      </div>
+                      <span className="bg-gold/10 border border-gold/20 text-gold text-xs font-bold px-4 py-2 rounded-full flex items-center gap-2">
+                        <Video className="w-4 h-4" /> Cloudinary Enabled
+                      </span>
+                    </div>
+
+                    <div className="space-y-10">
+                      {/* ── Top Row Grid: 1. Brand Logo & 2. Hero Section Video (Merged side-by-side on Laptop) ── */}
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+                        {/* ── 1. Brand Logo Section ── */}
+                        <div className="bg-slate-50/50 border border-gold/15 p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl space-y-6 flex flex-col justify-between">
+                          <div className="space-y-6">
+                            <div className="pb-4 border-b border-gold/15 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                              <div className="flex items-center gap-2.5">
+                                <div className="w-8 h-8 rounded-xl bg-gold/10 text-gold flex items-center justify-center font-black text-xs shrink-0">
+                                  1
+                                </div>
+                                <div>
+                                  <h3 className="font-sans text-base font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                                    <ImageIcon className="w-4 h-4 text-gold shrink-0" /> Brand Logo
+                                  </h3>
+                                  <p className="text-[11px] text-slate-500 font-semibold">Used across Header Navigation, Mobile Menu, and Footer</p>
+                                </div>
+                              </div>
+                              <span className="bg-amber-100 text-amber-800 text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full self-start sm:self-auto shrink-0">Primary Brand</span>
+                            </div>
+
+                            {[
+                              { key: 'site_logo', title: 'Website Brand Logo', desc: 'Main logo shown in Navbar & Footer', type: 'image' }
+                            ].map(item => {
+                              const dbItem = siteMedia.find(m => m.media_key === item.key)
+                              const currentUrl = dbItem?.url || ''
+                              const isUploading = uploadingMediaKey === item.key
+
+                              return (
+                                <div key={item.key} className="bg-white border border-gold/20 p-5 rounded-2xl shadow-sm space-y-4">
+                                  <div className="flex justify-between items-start gap-2">
+                                    <div>
+                                      <h4 className="font-bold text-slate-900 text-sm">{item.title}</h4>
+                                      <span className="text-[10px] font-mono text-gold font-bold uppercase tracking-wider">{item.key}</span>
+                                    </div>
+                                    <span className="bg-slate-100 text-slate-600 text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded">Image</span>
+                                  </div>
+
+                                  {/* Preview */}
+                                  <div className="relative aspect-[3/1] rounded-xl overflow-hidden bg-[#0b0b0c] border border-slate-200 shadow-inner flex items-center justify-center p-4">
+                                    {currentUrl ? (
+                                      <img src={currentUrl} alt="" className="max-h-full w-auto object-contain" />
+                                    ) : (
+                                      <div className="text-slate-500 text-xs font-bold uppercase tracking-wider flex items-center gap-1.5">
+                                        <ImageIcon className="w-4 h-4 text-gold" /> No Logo Uploaded
+                                      </div>
+                                    )}
+                                  </div>
+
+                                  {/* Upload Button */}
+                                  <label className={`w-full py-2.5 px-4 rounded-xl border border-gold/30 bg-gradient-to-r from-[#FFFDF9] to-white hover:bg-gold/10 text-gold font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer transition-all ${isUploading ? 'opacity-50 pointer-events-none' : ''}`}>
+                                    <ImageIcon className="w-4 h-4" />
+                                    <span>{isUploading ? 'Uploading to Cloudinary…' : 'Upload New Logo'}</span>
+                                    <input
+                                      type="file"
+                                      accept="image/*"
+                                      onChange={(e) => handleMediaUpload(e, item.key)}
+                                      className="hidden"
+                                      disabled={isUploading}
+                                    />
+                                  </label>
+                                </div>
+                              )
+                            })}
+                          </div>
+                        </div>
+
+
+                        {/* ── 2. Hero Section Video ── */}
+                        <div className="bg-slate-50/50 border border-gold/15 p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl space-y-6 flex flex-col justify-between">
+                          <div className="space-y-6">
+                            <div className="pb-4 border-b border-gold/15 flex items-center gap-2.5">
+                              <div className="w-8 h-8 rounded-xl bg-gold/10 text-gold flex items-center justify-center font-black text-xs shrink-0">
+                                2
+                              </div>
+                              <div>
+                                <h3 className="font-sans text-base font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                                  <Video className="w-4 h-4 text-gold shrink-0" /> Hero Banner Section
+                                </h3>
+                                <p className="text-[11px] text-slate-500 font-semibold">Background video banner running behind landing title</p>
+                              </div>
+                            </div>
+
+                            {[
+                              { key: 'hero_video', title: 'Hero Background Video Banner', type: 'video' }
+                            ].map(item => {
+                              const dbItem = siteMedia.find(m => m.media_key === item.key)
+                              const currentUrl = dbItem?.url || ''
+                              const isUploading = uploadingMediaKey === item.key
+
+                              return (
+                                <div key={item.key} className="bg-white border border-gold/20 p-5 rounded-2xl shadow-sm space-y-4">
+                                  <div className="flex justify-between items-start gap-2">
+                                    <div>
+                                      <h4 className="font-bold text-slate-900 text-sm">{item.title}</h4>
+                                      <span className="text-[10px] font-mono text-gold font-bold uppercase tracking-wider">{item.key}</span>
+                                    </div>
+                                    <span className="bg-slate-100 text-slate-600 text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded">Video</span>
+                                  </div>
+
+                                  {/* Video Preview */}
+                                  <div className="relative aspect-video rounded-xl overflow-hidden bg-black border border-slate-200 shadow-inner flex items-center justify-center">
+                                    {currentUrl ? (
+                                      <video src={currentUrl} controls className="w-full h-full object-cover" preload="metadata" />
+                                    ) : (
+                                      <div className="text-slate-500 text-xs font-bold uppercase tracking-wider flex items-center gap-1.5">
+                                        <Video className="w-4 h-4 text-gold" /> No Hero Video Uploaded
+                                      </div>
+                                    )}
+                                  </div>
+
+                                  {/* Upload Button */}
+                                  <label className={`w-full py-2.5 px-4 rounded-xl border border-gold/30 bg-gradient-to-r from-[#FFFDF9] to-white hover:bg-gold/10 text-gold font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer transition-all ${isUploading ? 'opacity-50 pointer-events-none' : ''}`}>
+                                    <Video className="w-4 h-4" />
+                                    <span>{isUploading ? 'Uploading to Cloudinary…' : 'Upload Hero Video'}</span>
+                                    <input
+                                      type="file"
+                                      accept="video/*"
+                                      onChange={(e) => handleMediaUpload(e, item.key)}
+                                      className="hidden"
+                                      disabled={isUploading}
+                                    />
+                                  </label>
+                                </div>
+                              )
+                            })}
+                          </div>
+                        </div>
+
+                      </div>
+
+
+                      {/* ── 3. About Section / Story Photo ── */}
+                      <div className="bg-slate-50/50 border border-gold/15 p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl space-y-6">
+                        <div className="pb-4 border-b border-gold/15 flex items-center gap-2.5">
+                          <div className="w-8 h-8 rounded-xl bg-gold/10 text-gold flex items-center justify-center font-black text-xs shrink-0">
+                            3
+                          </div>
+                          <div>
+                            <h3 className="font-sans text-base font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                              <ImageIcon className="w-4 h-4 text-gold shrink-0" /> About Page &amp; Story Section
+                            </h3>
+                            <p className="text-[11px] text-slate-500 font-semibold">Featured image on "The Story of Ram Setu" homepage &amp; About page</p>
+                          </div>
+                        </div>
+
+                        <div className="max-w-md">
+                          {[
+                            { key: 'story_img', title: 'Story of Ram Setu Showcase Photo', type: 'image' }
+                          ].map(item => {
+                            const dbItem = siteMedia.find(m => m.media_key === item.key)
+                            const currentUrl = dbItem?.url || ''
+                            const isUploading = uploadingMediaKey === item.key
+
+                            return (
+                              <div key={item.key} className="bg-white border border-gold/20 p-5 rounded-2xl shadow-sm space-y-4">
+                                <div className="flex justify-between items-start gap-2">
+                                  <div>
+                                    <h4 className="font-bold text-slate-900 text-sm">{item.title}</h4>
+                                    <span className="text-[10px] font-mono text-gold font-bold uppercase tracking-wider">{item.key}</span>
+                                  </div>
+                                  <span className="bg-slate-100 text-slate-600 text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded">Image</span>
+                                </div>
+
+                                {/* Preview */}
+                                <div className="relative aspect-[4/3] rounded-xl overflow-hidden bg-cream2 border border-slate-200 shadow-inner flex items-center justify-center p-2">
+                                  {currentUrl ? (
+                                    <img src={currentUrl} alt="" className="w-full h-full object-cover rounded-lg" />
+                                  ) : (
+                                    <div className="text-slate-400 text-xs font-bold uppercase tracking-wider flex items-center gap-1.5">
+                                      <ImageIcon className="w-4 h-4 text-gold" /> No Story Photo Uploaded
+                                    </div>
+                                  )}
+                                </div>
+
+                                {/* Upload Button */}
+                                <label className={`w-full py-2.5 px-4 rounded-xl border border-gold/30 bg-gradient-to-r from-[#FFFDF9] to-white hover:bg-gold/10 text-gold font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer transition-all ${isUploading ? 'opacity-50 pointer-events-none' : ''}`}>
+                                  <ImageIcon className="w-4 h-4" />
+                                  <span>{isUploading ? 'Uploading to Cloudinary…' : 'Upload Story Photo'}</span>
+                                  <input
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={(e) => handleMediaUpload(e, item.key)}
+                                    className="hidden"
+                                    disabled={isUploading}
+                                  />
+                                </label>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      </div>
+
+
+                      {/* ── 4. Sacred Miracle Gallery (Photos) ── */}
+                      <div className="bg-slate-50/50 border border-gold/15 p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl space-y-6">
+                        <div className="pb-4 border-b border-gold/15 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-8 h-8 rounded-xl bg-gold/10 text-gold flex items-center justify-center font-black text-xs shrink-0">
+                              4
+                            </div>
+                            <div>
+                              <h3 className="font-sans text-base font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                                <ImageIcon className="w-4 h-4 text-gold shrink-0" /> Sacred Miracle Gallery Photos
+                              </h3>
+                              <p className="text-[11px] text-slate-500 font-semibold">Unlimited photo exhibition cards on Homepage &amp; Gallery Page</p>
+                            </div>
+                          </div>
+
+                          {/* Add New Photo Button */}
+                          <button
+                            type="button"
+                            onClick={() => setEditingMediaItem({ media_key: '', media_type: 'image', title: '', description: '', url: '', isNew: true })}
+                            className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-gradient-to-r from-gold to-gold-light text-dark font-black text-xs uppercase tracking-wider shadow-md hover:shadow-lg hover:scale-[1.02] sm:hover:scale-105 transition-all cursor-pointer flex items-center justify-center gap-1.5 border-none"
+                          >
+                            <Plus className="w-4 h-4" />
+                            <span>Add New Photo</span>
+                          </button>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                          {siteMedia.filter(m => m.media_type === 'image' && m.media_key !== 'site_logo' && m.media_key !== 'story_img').map((item, idx) => {
+                            const isUploading = uploadingMediaKey === item.media_key
+
+                            return (
+                              <div key={item.media_key} className="bg-white border border-gold/15 p-5 rounded-2xl shadow-sm space-y-4 flex flex-col justify-between group">
+                                <div className="space-y-3">
+                                  <div className="flex justify-between items-center gap-2 pb-2 border-b border-slate-100">
+                                    <span className="text-[9px] font-black uppercase tracking-widest text-gold bg-gold/10 px-2.5 py-1 rounded-full">Photo #{idx + 1}</span>
+                                    <div className="flex items-center gap-1">
+                                      <button
+                                        type="button"
+                                        onClick={() => setEditingMediaItem(item)}
+                                        className="px-2.5 py-1 rounded-lg bg-gold/10 text-gold hover:bg-gold hover:text-dark font-bold text-xs flex items-center gap-1 transition-all cursor-pointer border-none"
+                                        title="Edit Photo Details"
+                                      >
+                                        <Edit className="w-3.5 h-3.5" />
+                                        <span>Edit</span>
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleDeleteMedia(item.media_key)}
+                                        className="p-1 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer border-none"
+                                        title="Delete Photo"
+                                      >
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                      </button>
+                                    </div>
+                                  </div>
+
+                                  {/* Preview */}
+                                  <div className="relative aspect-[3/4] max-h-80 rounded-xl overflow-hidden bg-cream2 border border-slate-200 shadow-inner flex items-center justify-center">
+                                    {item.url ? (
+                                      <img src={item.url} alt="" className="w-full h-full object-cover" />
+                                    ) : (
+                                      <div className="text-slate-400 text-[10px] font-bold uppercase tracking-wider text-center flex flex-col items-center gap-1">
+                                        <ImageIcon className="w-5 h-5 text-gold" /> No Photo
+                                      </div>
+                                    )}
+                                  </div>
+
+                                  {/* Title & Desc Preview */}
+                                  <div className="space-y-1 pt-1">
+                                    <h5 className="font-bold text-xs text-slate-900 line-clamp-1">{item.title || <span className="text-slate-400 italic font-normal">No Title (Image Only)</span>}</h5>
+                                    <p className="text-[11px] text-slate-500 line-clamp-2">{item.description || <span className="text-slate-400 italic">No Description</span>}</p>
+                                  </div>
+
+                                  {/* Show on Homepage Toggle */}
+                                  <label className="flex items-center gap-2 pt-2 border-t border-slate-100 cursor-pointer select-none">
+                                    <input
+                                      type="checkbox"
+                                      checked={item.show_on_home ?? false}
+                                      onChange={(e) => handleMediaUpdate(item.media_key, { show_on_home: e.target.checked })}
+                                      className="w-4 h-4 text-gold rounded border-slate-300 focus:ring-gold accent-amber-600 cursor-pointer"
+                                    />
+                                    <span className="text-xs font-bold text-slate-700">Show on Homepage (Divine Gallery)</span>
+                                  </label>
+                                </div>
+
+                                {/* Replace Photo Button */}
+                                <div className="pt-2">
+                                  <label className={`w-full py-2 px-3 rounded-xl border border-gold/30 bg-slate-50 hover:bg-gold/10 text-gold font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 cursor-pointer transition-all ${isUploading ? 'opacity-50 pointer-events-none' : ''}`}>
+                                    <ImageIcon className="w-3.5 h-3.5" />
+                                    <span>{isUploading ? 'Uploading…' : 'Replace Photo'}</span>
+                                    <input
+                                      type="file"
+                                      accept="image/*"
+                                      onChange={(e) => handleMediaUpload(e, item.media_key, false, 'image')}
+                                      className="hidden"
+                                      disabled={isUploading}
+                                    />
+                                  </label>
+                                </div>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      </div>
+
+
+                      {/* ── 5. Proof Videos & Community Reels ── */}
+                      <div className="bg-slate-50/50 border border-gold/15 p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl space-y-6">
+                        <div className="pb-4 border-b border-gold/15 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-8 h-8 rounded-xl bg-gold/10 text-gold flex items-center justify-center font-black text-xs shrink-0">
+                              5
+                            </div>
+                            <div>
+                              <h3 className="font-sans text-base font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                                <Video className="w-4 h-4 text-gold shrink-0" /> Proof Videos &amp; Devotee Reels
+                              </h3>
+                              <p className="text-[11px] text-slate-500 font-semibold">Watch the Miracle reels &amp; Community proof videos on Homepage &amp; Gallery</p>
+                            </div>
+                          </div>
+
+                          {/* Add New Video Button */}
+                          <button
+                            type="button"
+                            onClick={() => setEditingMediaItem({ media_key: '', media_type: 'video', title: '', description: '', url: '', isNew: true })}
+                            className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-gradient-to-r from-gold to-gold-light text-dark font-black text-xs uppercase tracking-wider shadow-md hover:shadow-lg hover:scale-[1.02] sm:hover:scale-105 transition-all cursor-pointer flex items-center justify-center gap-1.5 border-none"
+                          >
+                            <Plus className="w-4 h-4" />
+                            <span>Add New Video</span>
+                          </button>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                          {siteMedia.filter(m => m.media_type === 'video' && m.media_key !== 'hero_video').map((item, idx) => {
+                            const isUploading = uploadingMediaKey === item.media_key
+
+                            return (
+                              <div key={item.media_key} className="bg-white border border-gold/15 p-5 rounded-2xl shadow-sm space-y-4 flex flex-col justify-between group">
+                                <div className="space-y-3">
+                                  <div className="flex justify-between items-center gap-2 pb-2 border-b border-slate-100">
+                                    <span className="text-[9px] font-black uppercase tracking-widest text-gold bg-gold/10 px-2.5 py-1 rounded-full">Reel #{idx + 1}</span>
+                                    <div className="flex items-center gap-1">
+                                      <button
+                                        type="button"
+                                        onClick={() => setEditingMediaItem(item)}
+                                        className="px-2.5 py-1 rounded-lg bg-gold/10 text-gold hover:bg-gold hover:text-dark font-bold text-xs flex items-center gap-1 transition-all cursor-pointer border-none"
+                                        title="Edit Video Details"
+                                      >
+                                        <Edit className="w-3.5 h-3.5" />
+                                        <span>Edit</span>
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleDeleteMedia(item.media_key)}
+                                        className="p-1 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer border-none"
+                                        title="Delete Video"
+                                      >
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                      </button>
+                                    </div>
+                                  </div>
+
+                                  {/* Video Preview */}
+                                  <div className="relative aspect-[9/16] rounded-xl overflow-hidden bg-black border border-slate-200 shadow-inner flex items-center justify-center">
+                                    {item.url ? (
+                                      <video src={item.url} controls className="w-full h-full object-cover" preload="metadata" />
+                                    ) : (
+                                      <div className="text-slate-500 text-xs font-bold uppercase tracking-wider flex items-center gap-1.5">
+                                        <Video className="w-4 h-4 text-gold" /> No Video Uploaded
+                                      </div>
+                                    )}
+                                  </div>
+
+                                  {/* Title & Desc Preview */}
+                                  <div className="space-y-1 pt-1">
+                                    <h5 className="font-bold text-xs text-slate-900 line-clamp-1">{item.title || <span className="text-slate-400 italic font-normal">No Title (Video Only)</span>}</h5>
+                                    <p className="text-[11px] text-slate-500 line-clamp-2">{item.description || <span className="text-slate-400 italic">No Description</span>}</p>
+                                  </div>
+
+                                  {/* Show on Homepage Toggle */}
+                                  <label className="flex items-center gap-2 pt-2 border-t border-slate-100 cursor-pointer select-none">
+                                    <input
+                                      type="checkbox"
+                                      checked={item.show_on_home ?? false}
+                                      onChange={(e) => handleMediaUpdate(item.media_key, { show_on_home: e.target.checked })}
+                                      className="w-4 h-4 text-gold rounded border-slate-300 focus:ring-gold accent-amber-600 cursor-pointer"
+                                    />
+                                    <span className="text-xs font-bold text-slate-700">Show on Homepage (Divine Community)</span>
+                                  </label>
+                                </div>
+
+                                {/* Replace Video Button */}
+                                <div className="pt-2">
+                                  <label className={`w-full py-2 px-3 rounded-xl border border-gold/30 bg-slate-50 hover:bg-gold/10 text-gold font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 cursor-pointer transition-all ${isUploading ? 'opacity-50 pointer-events-none' : ''}`}>
+                                    <Video className="w-3.5 h-3.5" />
+                                    <span>{isUploading ? 'Uploading…' : 'Replace Video'}</span>
+                                    <input
+                                      type="file"
+                                      accept="video/*"
+                                      onChange={(e) => handleMediaUpload(e, item.media_key, false, 'video')}
+                                      className="hidden"
+                                      disabled={isUploading}
+                                    />
+                                  </label>
+                                </div>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      </div>
+
                     </div>
                   </div>
                 )}
@@ -1936,11 +2809,10 @@ export default function Dashboard() {
                             <button
                               type="button"
                               onClick={() => setProductImagePrimary(idx)}
-                              className={`p-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                                img.is_primary 
-                                  ? 'bg-gold text-white cursor-default' 
-                                  : 'bg-white hover:bg-gold hover:text-white text-slate-800'
-                              }`}
+                              className={`p-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${img.is_primary
+                                ? 'bg-gold text-white cursor-default'
+                                : 'bg-white hover:bg-gold hover:text-white text-slate-800'
+                                }`}
                               title={img.is_primary ? 'Primary Image' : 'Set as Primary'}
                             >
                               ★
@@ -2336,7 +3208,7 @@ export default function Dashboard() {
       {viewReview && (
         <div className="fixed inset-0 z-[1200] bg-slate-900/50 backdrop-blur-md flex items-center justify-center p-2 sm:p-4">
           <div className="bg-white border border-gold/20 rounded-[2.5rem] p-6 sm:p-8 w-full max-w-lg shadow-2xl relative flex flex-col text-left max-h-[90vh] overflow-y-auto no-scrollbar">
-            
+
             {/* Header */}
             <div className="flex justify-between items-center mb-6 pb-4 border-b border-gold/15 shrink-0">
               <div>
@@ -2382,11 +3254,10 @@ export default function Dashboard() {
                   <span className="text-slate-400 text-[9px] uppercase font-black tracking-widest block mb-1">Rating</span>
                   <div className="flex gap-0.5 text-gold mt-1">
                     {[...Array(5)].map((_, i) => (
-                      <Star 
-                        key={i} 
-                        className={`w-4 h-4 ${
-                          i < viewReview.rating ? 'fill-current' : 'text-gray-200'
-                        }`} 
+                      <Star
+                        key={i}
+                        className={`w-4 h-4 ${i < viewReview.rating ? 'fill-current' : 'text-gray-200'
+                          }`}
                       />
                     ))}
                   </div>
@@ -2440,6 +3311,120 @@ export default function Dashboard() {
                 >
                   <Trash2 className="w-4 h-4" /> Delete Review
                 </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {editingMediaItem && (
+        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-md flex items-center justify-center p-2 sm:p-4">
+          <div className="bg-white border border-gold/20 rounded-[2rem] p-6 sm:p-8 w-full max-w-3xl max-h-[95vh] overflow-y-auto no-scrollbar shadow-2xl relative flex flex-col space-y-6">
+            <div className="flex justify-between items-center pb-4 border-b border-gold/15">
+              <div>
+                <span className="text-gold text-[9px] font-bold tracking-[0.2em] uppercase block mb-1">✦ {editingMediaItem.isNew ? 'Add New Asset' : 'Edit Media Details'} ✦</span>
+                <h3 className="font-sans text-base sm:text-lg md:text-xl font-black text-slate-900 uppercase tracking-widest">
+                  {editingMediaItem.isNew
+                    ? (editingMediaItem.media_type === 'video' ? 'Add New Video' : 'Add New Photo')
+                    : (editingMediaItem.media_type === 'video' ? 'Edit Video Details' : 'Edit Photo Details')}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEditingMediaItem(null)}
+                className="p-1.5 rounded-full hover:bg-gold/10 text-slate-400 hover:text-gold transition-all cursor-pointer border border-transparent"
+              >
+                <XCircle className="w-6 h-6" />
+              </button>
+            </div>
+
+            {/* Side-by-Side 2-Column Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+              {/* LEFT COLUMN: Media Preview & File Upload */}
+              <div className="space-y-3">
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block">Media File *</label>
+                <div className="relative aspect-[3/4] max-h-80 md:max-h-96 rounded-2xl overflow-hidden bg-black border border-slate-200 shadow-inner flex items-center justify-center">
+                  {editingMediaItem.url ? (
+                    editingMediaItem.media_type === 'video' ? (
+                      <video src={editingMediaItem.url} controls className="w-full h-full object-cover" />
+                    ) : (
+                      <img src={editingMediaItem.url} alt="" className="w-full h-full object-cover" />
+                    )
+                  ) : (
+                    <div className="text-slate-400 text-xs font-bold uppercase tracking-wider flex flex-col items-center gap-2 text-center p-4">
+                      {editingMediaItem.media_type === 'video' ? <Video className="w-8 h-8 text-gold" /> : <ImageIcon className="w-8 h-8 text-gold" />}
+                      <span>No File Selected Yet</span>
+                    </div>
+                  )}
+                </div>
+                <label className={`w-full py-3 px-3 rounded-xl border border-gold/30 bg-slate-50 hover:bg-gold/10 text-gold font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 cursor-pointer transition-all ${uploadingMediaKey ? 'opacity-50 pointer-events-none' : ''}`}>
+                  {editingMediaItem.media_type === 'video' ? <Video className="w-4 h-4" /> : <ImageIcon className="w-4 h-4" />}
+                  <span>{uploadingMediaKey ? 'Uploading to Cloudinary…' : (editingMediaItem.url ? `Replace ${editingMediaItem.media_type === 'video' ? 'Video' : 'Photo'}` : `Select ${editingMediaItem.media_type === 'video' ? 'Video' : 'Photo'} File`)}</span>
+                  <input
+                    type="file"
+                    accept={editingMediaItem.media_type === 'video' ? 'video/*' : 'image/*'}
+                    onChange={handleModalFileUpload}
+                    className="hidden"
+                  />
+                </label>
+              </div>
+
+              {/* RIGHT COLUMN: Content Fields & Actions */}
+              <div className="space-y-4 flex flex-col justify-between h-full">
+                <div className="space-y-4">
+                  {/* Title Input */}
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block">Title (Optional)</label>
+                    <input
+                      type="text"
+                      value={editingMediaItem.title ?? ''}
+                      placeholder="Leave empty if you don't want a title on website"
+                      onChange={(e) => setEditingMediaItem(prev => ({ ...prev, title: e.target.value }))}
+                      className="w-full px-4 py-3 bg-slate-50 border border-gold/20 focus:border-gold rounded-xl text-sm font-semibold text-slate-900 focus:outline-none"
+                    />
+                  </div>
+
+                  {/* Short Description Input */}
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block">Short Description (Optional)</label>
+                    <textarea
+                      rows={4}
+                      value={editingMediaItem.description ?? ''}
+                      placeholder="Leave empty if you don't want a description on website"
+                      onChange={(e) => setEditingMediaItem(prev => ({ ...prev, description: e.target.value }))}
+                      className="w-full px-4 py-3 bg-slate-50 border border-gold/20 focus:border-gold rounded-xl text-xs text-slate-700 focus:outline-none"
+                    />
+                  </div>
+
+                  {/* Show on Homepage Checkbox */}
+                  <label className="flex items-center gap-2.5 p-3 rounded-xl bg-slate-50 border border-gold/15 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={editingMediaItem.show_on_home ?? false}
+                      onChange={(e) => setEditingMediaItem(prev => ({ ...prev, show_on_home: e.target.checked }))}
+                      className="w-4 h-4 text-gold rounded border-slate-300 focus:ring-gold accent-amber-600 cursor-pointer shrink-0"
+                    />
+                    <span className="text-xs font-bold text-slate-800">Feature on Homepage ({editingMediaItem.media_type === 'video' ? 'Max 2 videos' : 'Max 4 photos'})</span>
+                  </label>
+                </div>
+
+                {/* Actions Bar */}
+                <div className="pt-4 border-t border-slate-100 flex gap-3">
+                  <button
+                    type="button"
+                    onClick={handleSaveModalMedia}
+                    className="flex-1 py-3 bg-gradient-to-r from-gold to-gold-light text-dark font-black text-xs uppercase tracking-widest rounded-xl hover:shadow-lg transition-all cursor-pointer border-none"
+                  >
+                    {editingMediaItem.isNew ? 'Save & Add to Website' : 'Save Changes'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEditingMediaItem(null)}
+                    className="px-5 py-3 bg-slate-100 text-slate-600 font-bold text-xs uppercase tracking-widest rounded-xl hover:bg-slate-200 transition-all cursor-pointer border-none"
+                  >
+                    Cancel
+                  </button>
+                </div>
               </div>
             </div>
           </div>
